@@ -64,21 +64,11 @@ class MafiaGame:
         Returns:
             bool: True if setup successful, False otherwise.
         """
-        # Check if we have enough models
-        if len(self.models) < config.PLAYERS_PER_GAME and self.unique_models:
-            self.logger.error(
-                f"Not enough models. Need {config.PLAYERS_PER_GAME}, but only have {len(self.models)}."
-            )
-            return False
 
         # Log game start
         self.logger.game_start(1, self.game_id, self.language)
 
-        # Randomly select models for this game
-        if self.unique_models:
-            selected_models = random.sample(self.models, config.PLAYERS_PER_GAME)
-        else:
-            selected_models = random.choices(self.models, k=config.PLAYERS_PER_GAME)
+        selected_models = [self.models[0]] * config.PLAYERS_PER_GAME
 
         # Assign roles
         roles = []

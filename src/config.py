@@ -17,34 +17,13 @@ FIREBASE_CREDENTIALS_PATH = "firebase_credentials.json"
 
 # Game settings
 
-# Только модели, доступные локально и по размеру подходящие для вашей GPU
 MODELS = [
-    "meta-llama/llama-3-8b-instruct",               # 8B
-    "meta-llama/llama-3-8b",                        # 8B base
-    "meta-llama/llama-3-13b-instruct",              # 13B
-    "meta-llama/llama-3-13b",                       # 13B base
-    "meta-llama/llama-2-13b-hf",                    # Llama 2 13B (если нужен)
-    "mistralai/mistral-7b-instruct-v0.2",           # Mistral 7B
-    "mistralai/mistral-7b-instruct",                # Mistral 7B (старше)
-    "deepseek-ai/deepseek-llm-7b-chat",             # DeepSeek 7B-Chat
-    "deepseek-ai/deepseek-llm-33b-chat",            # DeepSeek 33B-Chat (32B+)
-    "deepseek-ai/deepseek-llm-33b-base",            # DeepSeek 33B-Base
-    "cognitivecomputations/dolphin-2.6-mistral-7b", # Dolphin на Mistral 7B
-    "nousresearch/hermes-2-mistral-7b",             # Hermes на Mistral 7B
-    "gryphe/mythomax-l2-13b",                       # MythoMax на Llama 13B
-    "qwen/qwen1.5-7b-chat",                         # Qwen 7B
-    "qwen/qwen1.5-32b-chat",                        # Qwen 32B (32B подходит для вашей GPU)
-    "microsoft/WizardLM-2-8x22B",                   # WizardLM (если есть open weights): 8x22B (примерно 32-40B суммарно)
-    # Добавьте другие open-source модели до ~40B, которые хотите тестировать
-]
-
-# FREE_MODELS можем игнорировать, либо оставить для внутренних тестов
-FREE_MODELS = [
-    "deepseek-ai/deepseek-llm-33b-chat",    # те же, что реально есть у вас локально
-    "qwen/qwen1.5-32b-chat",
-    "meta-llama/llama-3-13b-instruct",
-    "mistralai/mistral-7b-instruct-v0.2",
     "gryphe/mythomax-l2-13b",
+    "mistralai/mistral-small-24b-instruct-2501",
+    "deepseek/deepseek-llm-7b-chat",
+    "deepseek/deepseek-r1-distill-llama-70b",
+    "nousresearch/hermes-3-llama-3.1-70b",
+    "deepseek-ai/DeepSeek-R1-Distill-Qwen-32B",
 ]
 
 # Game configuration (оставим как есть)

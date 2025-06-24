@@ -5,8 +5,9 @@ Configuration settings for the LLM Mafia Game Competition (LOCAL MODELS ONLY).
 import os
 from dotenv import load_dotenv
 
-# Load environment variables from .env file
 load_dotenv()
+
+OPENROUTER_API_URL = os.getenv("OPENROUTER_API_URL", "http://localhost:8000/v1/completions")
 
 # OpenAI-совместимый локальный API (например, vLLM)
 # Endpoints:

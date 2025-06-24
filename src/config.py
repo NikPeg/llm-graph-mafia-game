@@ -1,5 +1,5 @@
 """
-Configuration settings for the LLM Mafia Game Competition.
+Configuration settings for the LLM Mafia Game Competition (LOCAL MODELS ONLY).
 """
 
 import os
@@ -8,100 +8,68 @@ from dotenv import load_dotenv
 # Load environment variables from .env file
 load_dotenv()
 
-# OpenRouter API settings
-OPENROUTER_API_KEY = os.getenv("OPENROUTER_API_KEY", "your_openrouter_api_key_here")
-OPENROUTER_API_URL = "https://openrouter.ai/api/v1/chat/completions"
+# OpenAI-совместимый локальный API (например, vLLM или text-generation-webui)
+OPENROUTER_API_URL = os.getenv("LOCAL_LLM_API_URL", "http://localhost:8000/v1/chat/completions")
+OPENROUTER_API_KEY = os.getenv("OPENROUTER_API_KEY", "local_test_key")  # любой ключ, если сервер не требует
 
-# Firebase settings
-FIREBASE_CREDENTIALS_PATH = (
-    "firebase_credentials.json"  # Path to your Firebase credentials file
-)
+# Firebase settings (не изменяем для локального теста)
+FIREBASE_CREDENTIALS_PATH = "firebase_credentials.json"
 
 # Game settings
 
-CLAUDE_3_7_SONNET = "anthropic/claude-3.7-sonnet"
+# Только модели, доступные локально и по размеру подходящие для вашей GPU
 MODELS = [
-    "google/gemini-2.0-flash-001",
-    "google/gemini-flash-1.5",
-    "google/gemini-flash-1.5-8b",
-    "openai/gpt-4o-mini",
-    "meta-llama/llama-3.3-70b-instruct",
-    "google/gemini-2.0-flash-lite-001",
-    "meta-llama/llama-3.1-70b-instruct",
-    # "deepseek/deepseek-r1", # takes too long to respond
-    "gryphe/mythomax-l2-13b",
-    "microsoft/wizardlm-2-8x22b",
-    "mistralai/mistral-small-24b-instruct-2501",
-    "nousresearch/hermes-3-llama-3.1-405b",
-    "minimax/minimax-01",
-    # "sao10k/l3-euryale-70b", # max context 8192
-    "deepseek/deepseek-chat",
-    "openai/gpt-4o",
-    "anthropic/claude-3.5-sonnet",
-    "deepseek/deepseek-r1-distill-llama-70b",
-    CLAUDE_3_7_SONNET,
-    CLAUDE_3_7_SONNET + ":thinking",
+    "meta-llama/llama-3-8b-instruct",               # 8B
+    "meta-llama/llama-3-8b",                        # 8B base
+    "meta-llama/llama-3-13b-instruct",              # 13B
+    "meta-llama/llama-3-13b",                       # 13B base
+    "meta-llama/llama-2-13b-hf",                    # Llama 2 13B (если нужен)
+    "mistralai/mistral-7b-instruct-v0.2",           # Mistral 7B
+    "mistralai/mistral-7b-instruct",                # Mistral 7B (старше)
+    "deepseek-ai/deepseek-llm-7b-chat",             # DeepSeek 7B-Chat
+    "deepseek-ai/deepseek-llm-33b-chat",            # DeepSeek 33B-Chat (32B+)
+    "deepseek-ai/deepseek-llm-33b-base",            # DeepSeek 33B-Base
+    "cognitivecomputations/dolphin-2.6-mistral-7b", # Dolphin на Mistral 7B
+    "nousresearch/hermes-2-mistral-7b",             # Hermes на Mistral 7B
+    "gryphe/mythomax-l2-13b",                       # MythoMax на Llama 13B
+    "qwen/qwen1.5-7b-chat",                         # Qwen 7B
+    "qwen/qwen1.5-32b-chat",                        # Qwen 32B (32B подходит для вашей GPU)
+    "microsoft/WizardLM-2-8x22B",                   # WizardLM (если есть open weights): 8x22B (примерно 32-40B суммарно)
+    # Добавьте другие open-source модели до ~40B, которые хотите тестировать
 ]
 
+# FREE_MODELS можем игнорировать, либо оставить для внутренних тестов
 FREE_MODELS = [
-    "deepseek/deepseek-r1:free",
-    "google/gemini-2.0-pro-exp-02-05:free",
-    "google/gemini-2.0-flash-exp:free",
-    "google/gemini-2.0-flash-lite-preview-02-05:free",
-    "meta-llama/llama-3.3-70b-instruct:free",
-    "deepseek/deepseek-r1-distill-llama-70b:free",
-    "google/gemini-exp-1206:free",
-    "qwen/qwen2.5-vl-72b-instruct:free",
-    "cognitivecomputations/dolphin3.0-r1-mistral-24b:free",
-    "nvidia/llama-3.1-nemotron-70b-instruct:free",
+    "deepseek-ai/deepseek-llm-33b-chat",    # те же, что реально есть у вас локально
+    "qwen/qwen1.5-32b-chat",
+    "meta-llama/llama-3-13b-instruct",
+    "mistralai/mistral-7b-instruct-v0.2",
+    "gryphe/mythomax-l2-13b",
 ]
 
-# Game configuration
-NUM_GAMES = int(os.getenv("NUM_GAMES", 1))  # Number of games to simulate
-PLAYERS_PER_GAME = int(
-    os.getenv("PLAYERS_PER_GAME", 8)
-)  # Number of players in each game
-MAFIA_COUNT = int(os.getenv("MAFIA_COUNT", 2))  # Number of Mafia players
-DOCTOR_COUNT = int(os.getenv("DOCTOR_COUNT", 1))  # Number of Doctor players
+# Game configuration (оставим как есть)
+NUM_GAMES = int(os.getenv("NUM_GAMES", 1))
+PLAYERS_PER_GAME = int(os.getenv("PLAYERS_PER_GAME", 8))
+MAFIA_COUNT = int(os.getenv("MAFIA_COUNT", 2))
+DOCTOR_COUNT = int(os.getenv("DOCTOR_COUNT", 1))
 # Villagers will be: PLAYERS_PER_GAME - MAFIA_COUNT - DOCTOR_COUNT
 
-# Game type
-GAME_TYPE = "Classic Mafia"  # Type of Mafia game to run
-
-# Language setting
-LANGUAGE = os.getenv(
-    "GAME_LANGUAGE", "English"
-)  # Language for game prompts and interactions (supported: English, Spanish, French, Korean)
-
-# Maximum number of rounds before declaring a draw
+GAME_TYPE = "Classic Mafia"
+LANGUAGE = os.getenv("GAME_LANGUAGE", "English")
 MAX_ROUNDS = int(os.getenv("MAX_ROUNDS", 20))
-
-# Timeout for API calls (in seconds)
 API_TIMEOUT = int(os.getenv("API_TIMEOUT", 60))
-
-# Maximum output tokens for LLM responses
 MAX_OUTPUT_TOKENS = int(os.getenv("MAX_OUTPUT_TOKENS", 400))
 
-# Model-specific configurations
+# Model-specific configurations (можно дополнять под свои нужды)
 MODEL_CONFIGS = {
-    "deepseek/deepseek-r1": {
-        "timeout": 90,  # Longer timeout for DeepSeek-R1
-    },
-    "deepseek/deepseek-r1:free": {
+    "deepseek-ai/deepseek-llm-33b-chat": {
         "timeout": 90,
     },
-    "deepseek/deepseek-r1-distill-llama-70b": {
+    "qwen/qwen1.5-32b-chat": {
         "timeout": 90,
-    },
-    "deepseek/deepseek-r1-distill-llama-70b:free": {
-        "timeout": 90,
-    },
-    "deepseek/deepseek-chat": {
-        "timeout": 60,
     },
 }
 
-# Random seed for reproducibility (set to None for random behavior)
 RANDOM_SEED = os.getenv("RANDOM_SEED")
 if RANDOM_SEED is not None:
     RANDOM_SEED = int(RANDOM_SEED)

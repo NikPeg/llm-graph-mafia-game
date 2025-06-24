@@ -7,13 +7,13 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
-OPENROUTER_API_URL = os.getenv("OPENROUTER_API_URL", "http://localhost:8000/v1/completions")
+OPENROUTER_API_URL = os.getenv("OPENROUTER_API_URL", "http://localhost:8000/v1/chat/completions")
 
 # OpenAI-совместимый локальный API (например, vLLM)
 # Endpoints:
 # vLLM:         http://localhost:8000/v1/completions
 # text-gen-ui:  http://localhost:5000/v1/completions
-LOCAL_LLM_API_URL = os.getenv("LOCAL_LLM_API_URL", "http://localhost:8000/v1/completions")
+LOCAL_LLM_API_URL = os.getenv("LOCAL_LLM_API_URL", "http://localhost:8000/v1/chat/completions")
 OPENROUTER_API_KEY = os.getenv("OPENROUTER_API_KEY", "local_test_key")
 
 # Firebase settings (не изменяем для локального теста)

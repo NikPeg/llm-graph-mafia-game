@@ -698,7 +698,8 @@ class MafiaGame:
                     ] = "Invalid vote"
 
             # Update discussion history
-            self.discussion_history += f"{player.player_name}: {response}\n\n"
+            cleaned = clean_llm_response(response, player.player_name)
+            self.discussion_history += f"{player.player_name}: {cleaned}\n\n"
 
     def get_last_words(self, player, vote_count):
         """
@@ -949,6 +950,13 @@ Format your response as a JSON object with 'title', 'content', and 'one_liner' f
                 "one_liner": "Technical issues prevented our critic from delivering judgment.",
             }
 
+def clean_llm_response(text, player_name):
+    # Убираем дубли (например, "Bailey: " из текста)
+    t = re.sub(rf"^{re.escape(player_name)}(\s*:\s*)*", "", text).strip()
+    # Убираем вставки типа "Your response:", если в начале/конце:
+    t = re.sub(r"(?i)^your response:?\s*", "", t)
+    # Можно добавить еще автообрезку других шаблонов, если встречаются
+    return t
 
 player_names = [
     "Alex",

@@ -950,11 +950,11 @@ Format your response as a JSON object with 'title', 'content', and 'one_liner' f
         }
 
 def clean_llm_response(text, player_name):
-    # Убираем дубли (например, "Bailey: " из текста)
-    t = re.sub(rf"^{re.escape(player_name)}(\s*:\s*)*", "", text).strip()
-    # Убираем вставки типа "Your response:", если в начале/конце:
-    t = re.sub(r"(?i)^your response:?\s*", "", t)
-    # Можно добавить еще автообрезку других шаблонов, если встречаются
+    # Ищем последнее (!!!) появление "your response:" (регистр не важен)
+    parts = re.split(r"(?i)your response: ?", text)
+    t = parts[-1].strip() if len(parts) > 1 else text.strip()
+    # Убираем дубликаты имени игрока в начале строки
+    t = re.sub(rf"^{re.escape(player_name)}(\s*:\s*)*", "", t).strip()
     return t
 
 player_names = [

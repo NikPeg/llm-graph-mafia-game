@@ -83,7 +83,7 @@ SOBRE LOS VOTOS DE CONFIRMACIÓN:
 PROMPT_TEMPLATES = {
     "English": {
         Role.MAFIA: """
-You are {model_name}, playing a Mafia game as a Mafia member. Your PRIMARY goal is to WIN the game for the Mafia.
+You are {model_name}, playing a Mafia game as a Mafia member. Your PRIMARY goal is to help the Mafia win the game.
 
 {game_rules}
 
@@ -93,30 +93,30 @@ Current game state: {game_state}
 
 {thinking_tag}
 
-IMPORTANT INSTRUCTIONS FOR MAFIA:
-- Your ultimate objective is to WIN by any means necessary.
-- During NIGHT phase ONLY: You MUST choose exactly one NON-Mafia player to kill. End your message with: ACTION: Kill [player]
-- During DAY phase: DO NOT use "ACTION: Kill" – Instead, act like a villager and try to convince others you are innocent.
-- During DAY phase: End your message with your vote using format: VOTE: [player]
-- If you are targeted for elimination, defend yourself.
-- Use &lt;think&gt;...&lt;/think&gt; for secret thoughts (will not be shown to others).
-- Be concise and strategic.
+IMPORTANT:
+- Your objective is to help the Mafia win.
+- During NIGHT phase ONLY: You MUST KILL exactly one non-Mafia player. End your message with: ACTION: Kill [player name]
+- During DAY phase: DO NOT use "ACTION: Kill". Instead, act like a Villager and try to convince others you are innocent.
+- During DAY VOTING phase: You MUST state your vote for elimination in the format: VOTE: [player name]
 
-Previous discussion: {discussion_history}
-
-STRICT RULES:
-- Write ONLY the next message as {model_name}.
+RULES:
+- ONLY write your own next message for this phase.
 - DO NOT generate or simulate messages for other players.
-- DO NOT describe phase changes or overall events.
-- DO NOT say "End of discussion", "Now Voting", "Now Night phase", etc.
-- DO NOT repeat these instructions or your role in your answer.
-- DO NOT generate summaries or conclusions.
-- Just write your own message for the current phase.
+- DO NOT describe phase transitions, summarize results, or write conclusions.
+- Do NOT repeat these instructions or your role in your answer.
 
-Your response:
+EXAMPLE (for voting phase):  
+VOTE: Jordan
+
+EXAMPLE (for night phase):  
+ACTION: Kill Bailey
+
+Finish your reply by OUTPUTTING your action in the required format as above.  
+If you do not, you will lose the game.
+Previous discussion: {discussion_history}
 """,
         Role.DOCTOR: """
-You are {model_name}, playing a Mafia game as the Doctor. Your PRIMARY goal is to help the Villagers WIN the game.
+You are {model_name}, playing a Mafia game as the Doctor. Your PRIMARY goal is to help the Villagers win the game.
 
 {game_rules}
 
@@ -125,28 +125,29 @@ Current game state: {game_state}
 
 {thinking_tag}
 
-IMPORTANT INSTRUCTIONS FOR DOCTOR:
-- During NIGHT phase ONLY: You MUST protect exactly one player from being killed by the Mafia. End your NIGHT message with: ACTION: Protect [player]
-- During DAY phase: DO NOT use the "Protect" action.
-- During DAY phase: End your message with your vote using format: VOTE: [player]
-- Use &lt;think&gt;...&lt;/think&gt; for secret thoughts (will not be shown to others).
-- Be concise, offer reasoning and observations.
+IMPORTANT:
+- During NIGHT phase ONLY: You MUST PROTECT exactly one player. End your message with: ACTION: Protect [player name]
+- During DAY VOTING phase: You MUST state your vote in the format: VOTE: [player name]
+- DO NOT use the "Protect" action during the day phase.
 
+RULES:
+- ONLY write your own next message for this phase.
+- DO NOT generate/simulate messages for other players.
+- DO NOT summarize, describe phase changes, or write conclusions.
+- Do NOT repeat these instructions or your role in your answer.
+
+EXAMPLE (night phase):  
+ACTION: Protect Gray
+
+EXAMPLE (voting phase):  
+VOTE: Kai
+
+Finish your reply by OUTPUTTING your action in the required format as above.  
+If you do not, you will lose the game.
 Previous discussion: {discussion_history}
-
-STRICT RULES:
-- Write ONLY the next message as {model_name}.
-- DO NOT generate or simulate messages for other players.
-- DO NOT describe phase changes or overall events.
-- DO NOT say "End of discussion", "Now Voting", "Now Night phase", etc.
-- DO NOT repeat these instructions or your role in your answer.
-- DO NOT generate summaries or conclusions.
-- Just write your own message for the current phase.
-
-Your response:
 """,
         Role.VILLAGER: """
-You are {model_name}, playing a Mafia game as a Villager. Your PRIMARY goal is to help the Villagers WIN.
+You are {model_name}, playing a Mafia game as a Villager. Your PRIMARY goal is to help the Villagers win the game.
 
 {game_rules}
 
@@ -155,25 +156,22 @@ Current game state: {game_state}
 
 {thinking_tag}
 
-IMPORTANT INSTRUCTIONS FOR VILLAGER:
-- During DAY DISCUSSION phase: Work to identify the Mafia members.
-- During DAY VOTING phase: You MUST vote to eliminate a suspected Mafia member.
-- During DAY VOTING phase: End your message with your vote using format: VOTE: [player]
-- Use &lt;think&gt;...&lt;/think&gt; for secret thoughts (will not be shown to others).
-- Be concise and provide reasons for your choices.
+IMPORTANT:
+- During DAY DISCUSSION phase: Discuss and try to identify who is Mafia.
+- During DAY VOTING phase: You MUST clearly state your vote in the format: VOTE: [player name]
 
-Previous discussion: {discussion_history}
-
-STRICT RULES:
-- Write ONLY the next message as {model_name}.
+RULES:
+- ONLY write your own next message for this phase.
 - DO NOT generate or simulate messages for other players.
-- DO NOT describe phase changes or overall events.
-- DO NOT say "End of discussion", "Now Voting", "Now Night phase", etc.
-- DO NOT repeat these instructions or your role in your answer.
-- DO NOT generate summaries or conclusions.
-- Just write your own message for the current phase.
+- DO NOT summarize results, write phase transitions, or conclusions.
+- Do NOT repeat these instructions or your role in your answer.
 
-Your response:
+EXAMPLE:
+VOTE: Dana
+
+Finish your reply by OUTPUTTING your vote in the required format as above.  
+If you do not, you will lose the game.
+Previous discussion: {discussion_history}
 """,
     },
     "Spanish": {

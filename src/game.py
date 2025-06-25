@@ -217,6 +217,13 @@ class MafiaGame:
 
         return discussion_history_without_thinkings
 
+    def get_short_discussion_history(self):
+        # Используем историю уже без think-блоков
+        clean_history = self.discussion_history_without_thinkings()
+        all_lines = clean_history.strip().split("\n")
+        short_lines = all_lines[-config.MAX_MSG:] if len(all_lines) > config.MAX_MSG else all_lines
+        return "\n".join(short_lines)
+
     def execute_night_phase(self):
         """
         Execute the night phase of the game.
@@ -240,7 +247,7 @@ class MafiaGame:
                     game_state,
                     self.get_alive_players(),
                     self.mafia_players,
-                    self.discussion_history_without_thinkings(),
+                    self.get_short_discussion_history(),
                 )
 
                 # Get response
@@ -328,7 +335,7 @@ class MafiaGame:
                 game_state,
                 self.get_alive_players(),
                 None,
-                self.discussion_history_without_thinkings(),
+                self.get_short_discussion_history(),
             )
 
             # Get response
@@ -642,7 +649,7 @@ class MafiaGame:
                 game_state,
                 alive_players,
                 self.mafia_players if player.role == Role.MAFIA else None,
-                self.discussion_history_without_thinkings(),
+                self.get_short_discussion_history(),
             )
 
             # Get response
@@ -715,7 +722,7 @@ class MafiaGame:
             game_state,
             self.get_alive_players(),
             self.mafia_players if player.role == Role.MAFIA else None,
-            self.discussion_history_without_thinkings(),
+            self.get_short_discussion_history(),
         )
 
         # Get response

@@ -11,6 +11,7 @@ from logger import GameLogger, Color
 import re
 import json
 from openrouter import get_llm_response
+from .parsing import sanitize_model_response
 
 
 class MafiaGame:
@@ -594,20 +595,14 @@ class MafiaGame:
     ):
         """
         Conduct interactions with all alive players during the day phase.
-
-        Args:
-            alive_players (list): List of alive players
-            phase_type (str): Type of phase (day_discussion or day_voting)
-            instruction (str): Specific instruction for this interaction round
-            messages (list): List to collect all messages
-            collect_votes (bool): Whether to collect votes in this round
-            votes (dict): Dictionary to store votes if collect_votes is True
         """
+        active_names = [p.player_name for p in alive_players]
+
         for player in alive_players:
-            # Generate prompt
+            # Генерация prompt-а
             game_state = f"{self.get_game_state()} {instruction}"
 
-            # Add special instruction for doctor during day phase
+            # Доп. предупреждения для докторов и мафии днем
             if player.role == Role.DOCTOR:
                 day_warnings = {
                     "English": " IMPORTANT: This is the DAY phase. Do NOT use your protection ability now. Only use ACTION: Protect during night phase.",
@@ -615,12 +610,8 @@ class MafiaGame:
                     "French": " IMPORTANT: C'est la phase de JOUR. N'utilisez PAS votre capacité de protection maintenant. Utilisez ACTION: Protéger uniquement pendant la phase de nuit.",
                     "Korean": " 중요: 지금은 낮 단계입니다. 지금은 보호 능력을 사용하지 마세요. 행동: 보호하기는 밤 단계에서만 사용하세요.",
                 }
-
-                # Get the appropriate warning based on the doctor's language
                 warning = day_warnings.get(player.language, day_warnings["English"])
                 game_state += warning
-
-            # Add special instruction for mafia players during day phase
             elif player.role == Role.MAFIA:
                 day_warnings = {
                     "English": " IMPORTANT: This is the DAY phase. Do NOT use 'ACTION: Kill' now. Instead, use 'VOTE: [player]' to vote like other villagers.",
@@ -628,12 +619,9 @@ class MafiaGame:
                     "French": " IMPORTANT: C'est la phase de JOUR. N'utilisez PAS 'ACTION: Tuer' maintenant. À la place, utilisez 'VOTE: [joueur]' pour voter comme les autres villageois.",
                     "Korean": " 중요: 지금은 낮 단계입니다. '행동: 죽이기'를 사용하지 마세요. 대신 다른 마을 사람들처럼 '투표: [플레이어]'를 사용하여 투표하세요.",
                 }
-
-                # Get the appropriate warning based on the mafia player's language
                 warning = day_warnings.get(player.language, day_warnings["English"])
                 game_state += warning
 
-            # Add voting reminder for all players during voting phase
             if phase_type == "day_voting":
                 voting_reminders = {
                     "English": " REMINDER: This is the VOTING PHASE. You MUST end your message with 'VOTE: [player]' to cast your vote.",
@@ -641,11 +629,7 @@ class MafiaGame:
                     "French": " RAPPEL: C'est la phase de VOTE. Vous DEVEZ terminer votre message par 'VOTE: [joueur]' pour exprimer votre vote.",
                     "Korean": " 알림: 지금은 투표 단계입니다. 반드시 메시지 끝에 '투표: [플레이어]'를 포함하여 투표해야 합니다.",
                 }
-
-                # Get the appropriate reminder based on the player's language
-                reminder = voting_reminders.get(
-                    player.language, voting_reminders["English"]
-                )
+                reminder = voting_reminders.get(player.language, voting_reminders["English"])
                 game_state += reminder
 
             prompt = player.generate_prompt(
@@ -655,53 +639,85 @@ class MafiaGame:
                 self.discussion_history_without_thinkings(),
             )
 
-            # Get response
+            # Получение и постобработка ответа
             response = player.get_response(prompt)
+            sanitized = sanitize_model_response(
+                response,
+                player.player_name,
+                active_names,
+                phase_type,
+            )
+
+            # Особая обработка: если после очистки осталось пусто, либо строка состоит только из "ACTION:" / "VOTE:" — пропускаем этот ответ (не логируем, не добавляем в историю)
+            clean_test = sanitized.strip().upper()
+            if not sanitized or \
+                    (phase_type in ['day_discussion', 'discussion'] and
+                     ('ACTION:' in clean_test or 'VOTE:' in clean_test or 'ACCIÓN:' in clean_test)):
+                continue
+
+            # Логируем ответ (player_name вместо model_name)
             self.logger.player_response(
-                player.model_name, player.role.value, response, player.player_name
+                player.player_name, player.role.value, sanitized, player.player_name
             )
 
-            # Add to messages
-            messages.append(
-                {
-                    "speaker": player.model_name,
-                    "content": response,
-                    "player_name": player.player_name,
-                }
-            )
-            self.current_round_data["messages"].append(
-                {
-                    "speaker": player.model_name,
-                    "content": response,
-                    "phase": phase_type,
-                    "role": player.role.value,
-                    "player_name": player.player_name,
-                }
-            )
+            # Добавление в историю и сообщения (player_name используется!)
+            msg_data = {
+                "speaker": player.player_name,
+                "content": sanitized,
+                "phase": phase_type,
+                "role": player.role.value,
+                "player_name": player.player_name,
+            }
+            messages.append({
+                "speaker": player.player_name,
+                "content": sanitized,
+                "player_name": player.player_name,
+            })
+            self.current_round_data["messages"].append(msg_data)
 
-            # Parse vote if in voting round
+            # Обработка голосов
             if collect_votes and votes is not None:
-                vote_target = player.parse_day_vote(response, alive_players)
+                vote_target = player.parse_day_vote(sanitized, alive_players)
+                # Проверка таргета: валидный? не мертвый? не сам игрок?
+                if (not vote_target) or (vote_target.player_name == player.player_name) or (not vote_target.alive):
+                    # Выбираем случайно из живых не себя
+                    possible_targets = [p for p in alive_players if p.player_name != player.player_name]
+                    if possible_targets:
+                        import random
+                        vote_target = random.choice(possible_targets)
+                        auto_text = f"(auto-selected)"
+                        self.logger.player_action(
+                            player.player_name,
+                            player.role.value,
+                            f"Vote {vote_target.player_name} {auto_text}",
+                            player.player_name,
+                        )
+                        self.current_round_data["actions"][player.player_name] = f"Vote {vote_target.player_name} {auto_text}"
+                    else:
+                        # голосовать больше не за кого
+                        vote_target = None # нельзя голосовать
                 if vote_target:
-                    votes[player.model_name] = vote_target.model_name
-                    action_text = f"Vote {vote_target.player_name}"
-                    self.current_round_data["actions"][player.model_name] = action_text
-                    self.logger.player_action(
-                        player.model_name,
-                        player.role.value,
-                        action_text,
-                        player.player_name,
-                    )
+                    votes[player.player_name] = vote_target.player_name
+                    if "actions" not in self.current_round_data:
+                        self.current_round_data["actions"] = {}
+                    # В терминал и data — используем только player_name!
+                    if not self.current_round_data["actions"].get(player.player_name, None):
+                        action_text = f"Vote {vote_target.player_name}"
+                        self.current_round_data["actions"][player.player_name] = action_text
+                        self.logger.player_action(
+                            player.player_name,
+                            player.role.value,
+                            action_text,
+                            player.player_name,
+                        )
                 else:
                     self.logger.warning(
-                        f"{player.model_name} failed to cast a valid vote during voting phase"
+                        f"{player.player_name} failed to cast a valid vote during voting phase"
                     )
-                    self.current_round_data["actions"][
-                        player.model_name
-                    ] = "Invalid vote"
+                    self.current_round_data["actions"][player.player_name] = "Invalid vote"
 
-            # Update discussion history
-            self.discussion_history += f"{player.player_name}: {response}\n\n"
+            # Обновляем историю обсуждения
+            self.discussion_history += f"{player.player_name}: {sanitized}\n\n"
 
     def get_last_words(self, player, vote_count):
         """

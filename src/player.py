@@ -176,38 +176,35 @@ class Player:
             tuple: (action_type, target_player) or (None, None) if no valid action.
         """
         if self.role == Role.MAFIA:
-            # Look for action pattern based on language
-            pattern = ACTION_PATTERNS.get(self.language, ACTION_PATTERNS["English"])[
-                Role.MAFIA
-            ]
+            # Ищем паттерн кила
+            pattern = ACTION_PATTERNS.get(self.language, ACTION_PATTERNS["English"])[Role.MAFIA]
             match = re.search(pattern, response, re.IGNORECASE)
-
             if match:
                 target_name = match.group(1).strip()
-                # Find the target player, excluding Mafia members
-                target_player = self._find_target_player(
-                    target_name, all_players, exclude_mafia=True
-                )
-                if target_player:
-                    return "kill", target_player
+                for p in all_players:
+                    # Игнорируем maifa, мёртвых и себя
+                    if (
+                            p.player_name.lower() == target_name.lower() and
+                            p.alive and
+                            p.role != Role.MAFIA and
+                            p.player_name != self.player_name
+                    ):
+                        return "kill", p
             return None, None
 
         elif self.role == Role.DOCTOR:
-            # Look for action pattern based on language
-            pattern = ACTION_PATTERNS.get(self.language, ACTION_PATTERNS["English"])[
-                Role.DOCTOR
-            ]
+            # Ищем паттерн защиты
+            pattern = ACTION_PATTERNS.get(self.language, ACTION_PATTERNS["English"])[Role.DOCTOR]
             match = re.search(pattern, response, re.IGNORECASE)
-
             if match:
                 target_name = match.group(1).strip()
-                # Find the target player
-                target_player = self._find_target_player(target_name, all_players)
-                if target_player:
-                    return "protect", target_player
+                for p in all_players:
+                    # Доктору можно защищать любого живого
+                    if p.player_name.lower() == target_name.lower() and p.alive:
+                        return "protect", p
             return None, None
+
         else:
-            # Villagers don't have night actions
             return None, None
 
     def parse_day_vote(self, response, all_players):
@@ -219,16 +216,23 @@ class Player:
             all_players (list): List of all players in the game.
 
         Returns:
-            Player or None: The player being voted for, or None if no valid vote.
+            Player or None: The player being voted for (по player_name), или None если голос невалиден/нет голоса.
         """
-        # Get vote pattern based on language
+        # Получаем паттерн поиска VOTE:
         pattern = VOTE_PATTERNS.get(self.language, VOTE_PATTERNS["English"])
         match = re.search(pattern, response, re.IGNORECASE)
 
         if match:
-            target_name = match.group(1).strip()
-            # Find the target player
-            return self._find_target_player(target_name, all_players)
+            target_name_raw = match.group(1).strip()
+            # Сравниваем имена игроков только по player_name, регистр не важен
+            for p in all_players:
+                if (
+                        p.player_name.lower() == target_name_raw.lower() and
+                        p.player_name != self.player_name and
+                        p.alive
+                ):
+                    return p
+            # если нашли только себя или мертвого, игнорируем
         return None
 
     def get_confirmation_vote(self, game_state):
@@ -244,21 +248,14 @@ class Player:
         player_to_eliminate = game_state["confirmation_vote_for"]
         game_state_str = game_state["game_state"]
 
-        # Get the appropriate language, defaulting to English if not supported
         language = (
-            self.language
-            if self.language in CONFIRMATION_VOTE_EXPLANATIONS
-            else "English"
+            self.language if self.language in CONFIRMATION_VOTE_EXPLANATIONS else "English"
         )
-
-        # Get confirmation vote explanation for the player's language
         confirmation_explanation = CONFIRMATION_VOTE_EXPLANATIONS[language].format(
             player_to_eliminate=player_to_eliminate
         )
-
-        # Generate prompt based on language
         prompt = CONFIRMATION_VOTE_TEMPLATES[language].format(
-            model_name=self.player_name,  # Use player_name in prompts
+            model_name=self.player_name,  # только player_name!
             player_to_eliminate=player_to_eliminate,
             confirmation_explanation=confirmation_explanation,
             game_state_str=game_state_str,
@@ -266,12 +263,22 @@ class Player:
         )
 
         response = self.get_response(prompt)
+        # Очищаем response
+        response_clean = sanitize_model_response(
+            response,
+            self.player_name,
+            [],  # Нет необходимости в списке других имен тут, мы pattern-ищем agree/disagree
+            "confirmation"
+        ).lower()
 
-        # Parse the response for agree/disagree based on language
-        language = (
-            self.language if self.language in CONFIRMATION_VOTE_PATTERNS else "English"
-        )
-        if re.search(CONFIRMATION_VOTE_PATTERNS[language]["agree"], response.lower()):
+        lang_patterns = CONFIRMATION_VOTE_PATTERNS.get(language, CONFIRMATION_VOTE_PATTERNS["English"])
+        agree_pat = lang_patterns["agree"]
+        disagree_pat = lang_patterns["disagree"]
+
+        if re.search(agree_pat, response_clean):
             return "agree"
+        elif re.search(disagree_pat, response_clean):
+            return "disagree"
         else:
+            # Не найден ответ — по умолчанию "disagree"
             return "disagree"

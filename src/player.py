@@ -43,27 +43,14 @@ class Player:
         return f"{self.player_name} ({self.role.value}) [Model: {self.model_name}]"
 
     def _find_target_player(self, target_name, all_players, exclude_mafia=False):
-        """
-        Find a target player by name.
-
-        Args:
-            target_name (str): The name of the target player.
-            all_players (list): List of all players in the game.
-            exclude_mafia (bool, optional): Whether to exclude Mafia members from targets.
-
-        Returns:
-            Player or None: The target player if found, None otherwise.
-        """
         for player in all_players:
             if not player.alive:
                 continue
-
             if exclude_mafia and player.role == Role.MAFIA:
                 continue
-
-            if target_name.lower() in player.player_name.lower():
+            # Исправляем здесь:
+            if target_name.strip().lower() == player.player_name.strip().lower():
                 return player
-
         return None
 
     def generate_prompt(

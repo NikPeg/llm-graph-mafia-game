@@ -418,8 +418,8 @@ THINKING_TAGS = {
 # Constants for action patterns
 ACTION_PATTERNS = {
     "English": {
-        Role.MAFIA: r"ACTION:\s*Kill\s+([\w./-]+(?:[-:]\w+)*)",
-        Role.DOCTOR: r"ACTION:\s*Protect\s+([\w./-]+(?:[-:]\w+)*)",
+        Role.MAFIA: r"ACTION:\s*Kill\s+([A-Za-z][-A-Za-z]*)",
+        Role.DOCTOR: r"ACTION:\s*Protect\s+([A-Za-z][-A-Za-z]*)",
     },
     "Spanish": {
         Role.MAFIA: r"ACCIÓN:\s*Matar\s+([\w./-]+(?:[-:]\w+)*)",

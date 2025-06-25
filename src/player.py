@@ -181,6 +181,7 @@ class Player:
             match = re.search(pattern, response, re.IGNORECASE)
             if match:
                 target_name = match.group(1).strip()
+                target_name = target_name.rstrip('.:,; \t')
                 for p in all_players:
                     # Игнорируем maifa, мёртвых и себя
                     if (
@@ -198,6 +199,7 @@ class Player:
             match = re.search(pattern, response, re.IGNORECASE)
             if match:
                 target_name = match.group(1).strip()
+                target_name = target_name.rstrip('.:,; \t')
                 for p in all_players:
                     # Доктору можно защищать любого живого
                     if p.player_name.lower() == target_name.lower() and p.alive:

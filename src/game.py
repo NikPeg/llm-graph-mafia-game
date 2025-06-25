@@ -949,22 +949,6 @@ Format your response as a JSON object with 'title', 'content', and 'one_liner' f
             "one_liner": "Technical issues prevented our critic from delivering judgment.",
         }
 
-def clean_llm_response(text, player_name):
-    # 1. Оставить только что после последнего your response:
-    parts = re.split(r"(?i)your response: ?", text)
-    t = parts[-1].strip() if len(parts) > 1 else text.strip()
-    # 2. Убрать имя игрока в начале
-    t = re.sub(rf"^{re.escape(player_name)}(\s*:\s*)*", "", t).strip()
-    # 3. Если в ответе найден VOTE: <имя>, отрезать всё после этой команды (включая саму строку)
-    vote_match = re.search(r'^(.*?)(^\s*VOTE:\s*\w+\s*$)', t, re.MULTILINE|re.DOTALL)
-    if vote_match:
-        # Вырезаем всё до и включая VOTE: ... (оставляем только то, что до этой команды)
-        before_vote = vote_match.group(1).rstrip()
-        vote_line = vote_match.group(2).strip()
-        return (before_vote + '\n' + vote_line).strip()
-    else:
-        return t
-
 player_names = [
     "Alex",
     "Bailey",
@@ -1006,3 +990,27 @@ player_names = [
     "Winter",
     "Zion",
 ]
+
+def clean_llm_response(text, player_name):
+    """
+    Оставляет только строки, которые:
+      - начинаются с player_name: (с удаленным префиксом)
+      - или не начинаются ни с какого <имя>: (то есть это одиночные мысли без пометки спикера)
+    Все остальные строки (от других игроков) удаляет.
+    """
+    lines = text.splitlines()
+    result = []
+    # Составим регулярку для поиска "<имя_из_списка>:"
+    all_names_pattern = r"^(" + "|".join(re.escape(name) for name in player_names) + r")\s*:"
+    own_name_pattern = rf"^{re.escape(player_name)}\s*:"
+    for line in lines:
+        # Если строка начинается с своего имени
+        if re.match(own_name_pattern, line):
+            # Удаляем имя и двоеточие
+            result.append(re.sub(own_name_pattern, "", line, count=1).strip())
+        # Если не начинается с чьего-либо имени из player_names, просто добавляем
+        elif not re.match(all_names_pattern, line):
+            result.append(line.strip())
+        # Если это строка другого игрока — игнорируем
+    # Собираем все обратно, оставляя только свои/безымянные строки
+    return "\n".join([line for line in result if line.strip()])

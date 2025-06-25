@@ -21,16 +21,18 @@ FIREBASE_CREDENTIALS_PATH = (
 
 CLAUDE_3_7_SONNET = "deepseek/deepseek-r1-distill-llama-70b:free"
 MODELS = [
-    "deepseek/deepseek-r1:free",
-    "google/gemini-2.0-pro-exp-02-05:free",
-    "google/gemini-2.0-flash-exp:free",
-    "google/gemini-2.0-flash-lite-preview-02-05:free",
-    "meta-llama/llama-3.3-70b-instruct:free",
-    "deepseek/deepseek-r1-distill-llama-70b:free",
-    "google/gemini-exp-1206:free",
-    "qwen/qwen2.5-vl-72b-instruct:free",
-    "cognitivecomputations/dolphin3.0-r1-mistral-24b:free",
-    "nvidia/llama-3.1-nemotron-70b-instruct:free",
+    "mistralai/mistral-small-3.2-24b-instruct:free",
+    "minimax/minimax-m1:extended",
+    "moonshotai/kimi-dev-72b:free",
+    "deepseek/deepseek-r1-0528-qwen3-8b:free",
+    "deepseek/deepseek-r1-0528:free",
+    "sarvamai/sarvam-m:free",
+    "mistralai/devstral-small:free",
+    "google/gemma-3n-e4b-it:free",
+    "qwen/qwen3-30b-a3b:free",
+    "qwen/qwen3-14b:free",
+    "qwen/qwen3-235b-a22b:free",
+    "tngtech/deepseek-r1t-chimera:free",
 ]
 
 # Game configuration

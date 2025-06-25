@@ -654,6 +654,7 @@ class MafiaGame:
 
             # Get response
             response = player.get_response(prompt)
+            response = clean_llm_response(response, player.player_name)
             self.logger.player_response(
                 player.model_name, player.role.value, response, player.player_name
             )
@@ -698,7 +699,6 @@ class MafiaGame:
                     ] = "Invalid vote"
 
             # Update discussion history
-            cleaned = clean_llm_response(response, player.player_name)
             self.discussion_history += f"{player.player_name}: {cleaned}\n\n"
 
     def get_last_words(self, player, vote_count):
@@ -1014,3 +1014,14 @@ def clean_llm_response(text, player_name):
         # Если это строка другого игрока — игнорируем
     # Собираем все обратно, оставляя только свои/безымянные строки
     return "\n".join([line for line in result if line.strip()])
+
+if __name__ == "__main__":
+    player_names = ["Avery", "Dana", "Logan", "Quinn"]
+    sample = """
+Avery: *Avery thinks about the situation.* It's true that Quinn hasn't said much, but he seems genuinely worried about being killed.
+On the other hand, Logan's vote for Quinn could be a ploy.
+Dana: This is a tough call. I don't want to vote for Quinn just because Logan did.
+I guess we'll have to wait and see what happens during the night phase.
+Avery: VOTE: Logan
+"""
+    print(clean_llm_response(sample, "Avery"))

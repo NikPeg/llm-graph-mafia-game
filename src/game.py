@@ -505,17 +505,17 @@ class MafiaGame:
             else:
                 # Get last words from the player before elimination
                 last_words = self.get_last_words(
-                    eliminated_player, vote_counts[eliminated_player.model_name]
+                    eliminated_player, vote_counts[eliminated_player.player_name]
                 )
 
                 eliminated_player.alive = False
                 eliminated_players.append(eliminated_player)
                 self.current_round_data["eliminations"].append(
-                    eliminated_player.model_name
+                    eliminated_player.player_name
                 )
                 # Add to eliminated_by_vote to track players eliminated by voting
                 self.current_round_data["eliminated_by_vote"] = [
-                    eliminated_player.model_name
+                    eliminated_player.player_name
                 ]
 
                 # Store vote details in the round data
@@ -523,7 +523,7 @@ class MafiaGame:
                 self.current_round_data["vote_details"] = vote_details
 
                 # Include vote count in the outcome text
-                outcome_text = f"{eliminated_player.player_name} [{eliminated_player.model_name}] was eliminated by vote with {vote_counts[eliminated_player.model_name]} votes."
+                outcome_text = f"{eliminated_player.player_name} [{eliminated_player.model_name}] was eliminated by vote with {vote_counts[eliminated_player.player_name]} votes."
                 self.current_round_data["outcome"] += f" {outcome_text}"
                 self.logger.event(outcome_text, Color.YELLOW)
 
@@ -539,7 +539,7 @@ class MafiaGame:
                     # Add to messages
                     self.current_round_data["messages"].append(
                         {
-                            "speaker": eliminated_player.model_name,
+                            "speaker": eliminated_player.player_name,
                             "content": last_words,
                             "phase": "day",
                             "role": eliminated_player.role.value,
@@ -549,7 +549,7 @@ class MafiaGame:
                     )
 
                 # Log who voted for the eliminated player
-                voters = vote_details.get(eliminated_player.model_name, [])
+                voters = vote_details.get(eliminated_player.player_name, [])
                 if voters:
                     voter_names = [
                         name.split("/")[-1] for name in voters

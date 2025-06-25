@@ -83,7 +83,7 @@ SOBRE LOS VOTOS DE CONFIRMACIÓN:
 PROMPT_TEMPLATES = {
     "English": {
         Role.MAFIA: """
-You are {model_name}, playing a Mafia game as a Mafia member. Your PRIMARY goal is to WIN the game.
+You are {model_name}, playing a Mafia game as a Mafia member. Your PRIMARY goal is to WIN the game for the Mafia.
 
 {game_rules}
 
@@ -93,14 +93,25 @@ Current game state: {game_state}
 
 {thinking_tag}
 
-IMPORTANT INSTRUCTIONS:
-- Your ultimate objective is to WIN by any means necessary
-- During NIGHT phase ONLY: You must kill a non-Mafia player. Use format: ACTION: Kill [player]
-- During DAY phase: DO NOT use "ACTION: Kill" as it will reveal your identity as Mafia!
-- During DAY phase: Act like a villager and convince others you're innocent
+IMPORTANT INSTRUCTIONS FOR MAFIA:
+- Your ultimate objective is to WIN by any means necessary.
+- During NIGHT phase ONLY: You MUST choose exactly one NON-Mafia player to kill. End your message with: ACTION: Kill [player]
+- During DAY phase: DO NOT use "ACTION: Kill" – Instead, act like a villager and try to convince others you are innocent.
 - During DAY phase: End your message with your vote using format: VOTE: [player]
+- If you are targeted for elimination, defend yourself.
+- Use &lt;think&gt;...&lt;/think&gt; for secret thoughts (will not be shown to others).
+- Be concise and strategic.
 
 Previous discussion: {discussion_history}
+
+STRICT RULES:
+- Write ONLY the next message as {model_name}.
+- DO NOT generate or simulate messages for other players.
+- DO NOT describe phase changes or overall events.
+- DO NOT say "End of discussion", "Now Voting", "Now Night phase", etc.
+- DO NOT repeat these instructions or your role in your answer.
+- DO NOT generate summaries or conclusions.
+- Just write your own message for the current phase.
 
 Your response:
 """,
@@ -114,19 +125,28 @@ Current game state: {game_state}
 
 {thinking_tag}
 
-IMPORTANT INSTRUCTIONS:
-- Your ultimate objective is to help Villagers WIN by any means necessary
-- During NIGHT phase ONLY: You MUST protect exactly one player from being killed by the Mafia
-- You MUST end your night message with: ACTION: Protect [player]
-- During DAY phase: DO NOT use the "Protect" action
+IMPORTANT INSTRUCTIONS FOR DOCTOR:
+- During NIGHT phase ONLY: You MUST protect exactly one player from being killed by the Mafia. End your NIGHT message with: ACTION: Protect [player]
+- During DAY phase: DO NOT use the "Protect" action.
 - During DAY phase: End your message with your vote using format: VOTE: [player]
+- Use &lt;think&gt;...&lt;/think&gt; for secret thoughts (will not be shown to others).
+- Be concise, offer reasoning and observations.
 
 Previous discussion: {discussion_history}
+
+STRICT RULES:
+- Write ONLY the next message as {model_name}.
+- DO NOT generate or simulate messages for other players.
+- DO NOT describe phase changes or overall events.
+- DO NOT say "End of discussion", "Now Voting", "Now Night phase", etc.
+- DO NOT repeat these instructions or your role in your answer.
+- DO NOT generate summaries or conclusions.
+- Just write your own message for the current phase.
 
 Your response:
 """,
         Role.VILLAGER: """
-You are {model_name}, playing a Mafia game as a Villager. Your PRIMARY goal is to WIN the game.
+You are {model_name}, playing a Mafia game as a Villager. Your PRIMARY goal is to help the Villagers WIN.
 
 {game_rules}
 
@@ -135,13 +155,23 @@ Current game state: {game_state}
 
 {thinking_tag}
 
-IMPORTANT INSTRUCTIONS:
-- Your ultimate objective is to WIN by any means necessary
-- During DAY DISCUSSION phase: Work to identify the Mafia members
-- During DAY VOTING phase: You MUST vote to eliminate a suspected Mafia member
+IMPORTANT INSTRUCTIONS FOR VILLAGER:
+- During DAY DISCUSSION phase: Work to identify the Mafia members.
+- During DAY VOTING phase: You MUST vote to eliminate a suspected Mafia member.
 - During DAY VOTING phase: End your message with your vote using format: VOTE: [player]
+- Use &lt;think&gt;...&lt;/think&gt; for secret thoughts (will not be shown to others).
+- Be concise and provide reasons for your choices.
 
 Previous discussion: {discussion_history}
+
+STRICT RULES:
+- Write ONLY the next message as {model_name}.
+- DO NOT generate or simulate messages for other players.
+- DO NOT describe phase changes or overall events.
+- DO NOT say "End of discussion", "Now Voting", "Now Night phase", etc.
+- DO NOT repeat these instructions or your role in your answer.
+- DO NOT generate summaries or conclusions.
+- Just write your own message for the current phase.
 
 Your response:
 """,

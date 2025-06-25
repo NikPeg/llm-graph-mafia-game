@@ -177,19 +177,16 @@ class Player:
             tuple: (action_type, target_player) or (None, None) if no valid action.
         """
         if self.role == Role.MAFIA:
-            # Ищем паттерн кила
-            pattern = ACTION_PATTERNS.get(self.language, ACTION_PATTERNS["English"])[Role.MAFIA]
+            pattern = r"ACTION:\s*Kill\s+([A-Za-z][A-Za-z\s'-]*)"
             match = re.search(pattern, response, re.IGNORECASE)
             if match:
-                target_name = match.group(1).strip()
-                target_name = target_name.rstrip('.:,; \t')
+                target_name = match.group(1).strip().rstrip('.:,; \t')
                 for p in all_players:
-                    # Игнорируем maifa, мёртвых и себя
                     if (
-                            p.player_name.lower() == target_name.lower() and
-                            p.alive and
-                            p.role != Role.MAFIA and
-                            p.player_name != self.player_name
+                            p.player_name.lower() == target_name.lower()
+                            and p.alive
+                            and p.role != Role.MAFIA
+                            and p.player_name != self.player_name
                     ):
                         return "kill", p
             return None, None

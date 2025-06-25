@@ -7,74 +7,85 @@ def sanitize_model_response(response: str, cur_player_name: str, list_active_nam
     2. Удаляет все фрагменты 'Your response...' и все выше по тексту — если их больше одной, обрезает до второй включительно.
     3. Если phase == 'discussion'/'day_discussion', удаляет строки с ACTION: или VOTE: и всё, что после них (если такие есть).
     4. Если phase == 'night', удаляет строки с VOTE:
-    5. Удаляет лишние пробелы и пустые строки в конце.
+    5. Удаляет повторы "Имя: Имя: ..." (текущего игрока) в начале ответа (оставляет только смысловую часть).
+    6. Удаляет лишние пробелы и пустые строки в начале/конце ответа.
     """
 
     if not response or not isinstance(response, str):
         return ""
 
-    # --- 1. Обрезка по чужому "ИмяИгрока: ..."
-    # Составляем паттерн на имена других игроков
-    # Делаем \b...: чтобы не ловить куски слов
+    # 1. Обрезаем всё по чужим "Имя: ..."
     other_names = [name for name in list_active_names if name != cur_player_name]
-    # если имена есть
     if other_names:
-        pattern = r'^(?:' + '|'.join([re.escape(name) for name in other_names]) + r'):'  # например "^Frankie:"
-        # multi-line режим, ищем первую такую строку
+        # Regex ^(Имя1|Имя2|...): в начале строки (после опциональных пробелов)
+        pattern = r'^\s*(?:' + '|'.join([re.escape(name) for name in other_names]) + r'):'
         lines = response.splitlines()
         cut_index = None
         for idx, line in enumerate(lines):
-            # учет leading spaces
-            if re.match(rf'\s*{pattern}', line):
+            if re.match(pattern, line):
                 cut_index = idx
                 break
         if cut_index is not None:
-            response = '\n'.join(lines[:cut_index])  # все до этой строки невключительно
+            response = '\n'.join(lines[:cut_index])
 
-    # --- 2. Обрезаем всё до второй строки "Your response"
-    yr_lines = [m.start() for m in re.finditer(r'(?i)your response', response)]
-    if len(yr_lines) > 0:
-        # если две и более, вырезаем всё до второй "Your response"; иначе удаляем первую встречу
-        if len(yr_lines) >= 2:
-            second = yr_lines[1]
-            # найдем конец второй строки (до \n)
-            end_of_line = response.find('\n', second)
+    # 2. Обрезаем всё до второй строки "Your response"
+    yr_matches = list(re.finditer(r'(?i)your response', response))
+    if len(yr_matches) > 0:
+        if len(yr_matches) >= 2:
+            second_start = yr_matches[1].start()
+            # обрезать всё до второй включительно
+            end_of_line = response.find('\n', second_start)
             if end_of_line == -1:
-                # "Your response ..." в конце файла
-                response = response[second + len('Your response') :]
+                response = response[second_start + len('Your response') :]
             else:
                 response = response[end_of_line + 1 :]
         else:
-            # удаляем первую встречу + строку целиком
-            # ищем строку с Your response
-            pattern = r'^.*your response.*$\n?'  # строка полностью, insensitive
+            # удалить первую встречу + всю эту строку
+            pattern = r'^.*your response.*$\n?'  # строка целиком
             response = re.sub(pattern, '', response, flags=re.IGNORECASE | re.MULTILINE)
 
-    # --- 3. В дневной фазе обсуждения убираем любые ACTION/VOTE и всё после них
-    # определим, в какой фазе мы
-    phase_discussion = phase.lower() in ['discussion', 'day_discussion']
-    phase_voting = phase.lower() in ['vote', 'voting', 'day_voting']
-    phase_night = phase.lower() == 'night'
+    phase_lower = phase.lower()
+    phase_discussion = phase_lower in ['discussion', 'day_discussion']
+    phase_voting = phase_lower in ['vote', 'voting', 'day_voting']
+    phase_night = phase_lower == 'night'
 
-    # --- 3a. В обсуждении ACTION/ACCIÓN/Proteger/Kill/VOTE полностью вырезаем (иначе просто не добавляем сообщение)
+    # 3a. В обсуждении ACTION/VOTE — срезаем всё после них
     if phase_discussion:
-        # ищем фразы вида "ACTION:", "VOTE:", "ACCIÓN:", "PROTEGER", "KILL", и обрезаем всё после них (insensitive)
+        # ищем "ACTION:"/"VOTE:"/"ACCIÓN:"/"KILL" — всё после первой вхождения
         pattern = r'(?i)\n?(ACTION:|ACCIÓN:|VOTE:|PROTEGER|KILL)[^\n]*.*'
-        response = re.split(pattern, response)[0]  # всё до первого совпадения
+        response = re.split(pattern, response)[0]
 
-    # --- 3b. В ночной фазе убираем VOTE (Почему вдруг модель решила VOTE ночью)
+    # 3b. В ночной фазе убираем VOTE
     if phase_night:
         pattern = r'(?i)\n?(VOTE:)[^\n]*.*'
         response = re.split(pattern, response)[0]
 
-        # --- 4. Удалить пробелы и пустые строки вначале/в конце
+    # 4. Удалить пробелы и пустые строки в начале/конце
     response = response.strip()
     lines = response.split('\n')
-    # убрать пустые строки в начале/конце
+    # убираем пустые строки сверху/снизу
     while lines and not lines[0].strip():
         lines.pop(0)
     while lines and not lines[-1].strip():
         lines.pop()
     response = '\n'.join(lines).strip()
+
+    # 5. Удаление дублирующихся "Имя: Имя: ..." в начале ответа (текущий игрок)
+    #    Например "Morgan: Morgan: I agree", превращаем в "I agree"
+    #    Регистронезависимо, с учетом множества дублей, возможных пробелов
+    if cur_player_name:
+        pattern = r'^((?:' + re.escape(cur_player_name) + r':\s*){2,})'
+        match = re.match(pattern, response, re.IGNORECASE)
+        if match:
+            # удаляем все повторы имени с двоеточием слева
+            cleaned = response[match.end():].lstrip()
+            response = cleaned
+
+        # Также если просто имя: в начале (один раз), тоже убрать (иногда "Morgan: I agree")
+        one_pattern = r'^' + re.escape(cur_player_name) + r':\s*'
+        response = re.sub(one_pattern, '', response, flags=re.IGNORECASE).lstrip()
+
+    # 6. Финальный trim
+    response = response.strip()
 
     return response

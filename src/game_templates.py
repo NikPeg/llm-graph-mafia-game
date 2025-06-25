@@ -83,7 +83,7 @@ SOBRE LOS VOTOS DE CONFIRMACIÓN:
 PROMPT_TEMPLATES = {
     "English": {
         Role.MAFIA: """
-You are {model_name}, playing a Mafia game as a Mafia member. Your PRIMARY goal is to help the Mafia win the game.
+You are {model_name}, playing a Mafia game as a Mafia member. Your PRIMARY goal is to WIN the game.
 
 {game_rules}
 
@@ -93,30 +93,19 @@ Current game state: {game_state}
 
 {thinking_tag}
 
-IMPORTANT:
-- Your objective is to help the Mafia win.
-- During NIGHT phase ONLY: You MUST KILL exactly one non-Mafia player. End your message with: ACTION: Kill [player name]
-- During DAY phase: DO NOT use "ACTION: Kill". Instead, act like a Villager and try to convince others you are innocent.
-- During DAY VOTING phase: You MUST state your vote for elimination in the format: VOTE: [player name]
+IMPORTANT INSTRUCTIONS:
+- Your ultimate objective is to WIN by any means necessary
+- During NIGHT phase ONLY: You must kill a non-Mafia player. Use format: ACTION: Kill [player]
+- During DAY phase: DO NOT use "ACTION: Kill" as it will reveal your identity as Mafia!
+- During DAY phase: Act like a villager and convince others you're innocent
+- During DAY phase: End your message with your vote using format: VOTE: [player]
 
-RULES:
-- ONLY write your own next message for this phase.
-- DO NOT generate or simulate messages for other players.
-- DO NOT describe phase transitions, summarize results, or write conclusions.
-- Do NOT repeat these instructions or your role in your answer.
-
-EXAMPLE (for voting phase):  
-VOTE: Jordan
-
-EXAMPLE (for night phase):  
-ACTION: Kill Bailey
-
-Finish your reply by OUTPUTTING your action in the required format as above.  
-If you do not, you will lose the game.
 Previous discussion: {discussion_history}
+
+Your response:
 """,
         Role.DOCTOR: """
-You are {model_name}, playing a Mafia game as the Doctor. Your PRIMARY goal is to help the Villagers win the game.
+You are {model_name}, playing a Mafia game as the Doctor. Your PRIMARY goal is to help the Villagers WIN the game.
 
 {game_rules}
 
@@ -125,29 +114,19 @@ Current game state: {game_state}
 
 {thinking_tag}
 
-IMPORTANT:
-- During NIGHT phase ONLY: You MUST PROTECT exactly one player. End your message with: ACTION: Protect [player name]
-- During DAY VOTING phase: You MUST state your vote in the format: VOTE: [player name]
-- DO NOT use the "Protect" action during the day phase.
+IMPORTANT INSTRUCTIONS:
+- Your ultimate objective is to help Villagers WIN by any means necessary
+- During NIGHT phase ONLY: You MUST protect exactly one player from being killed by the Mafia
+- You MUST end your night message with: ACTION: Protect [player]
+- During DAY phase: DO NOT use the "Protect" action
+- During DAY phase: End your message with your vote using format: VOTE: [player]
 
-RULES:
-- ONLY write your own next message for this phase.
-- DO NOT generate/simulate messages for other players.
-- DO NOT summarize, describe phase changes, or write conclusions.
-- Do NOT repeat these instructions or your role in your answer.
-
-EXAMPLE (night phase):  
-ACTION: Protect Gray
-
-EXAMPLE (voting phase):  
-VOTE: Kai
-
-Finish your reply by OUTPUTTING your action in the required format as above.  
-If you do not, you will lose the game.
 Previous discussion: {discussion_history}
+
+Your response:
 """,
         Role.VILLAGER: """
-You are {model_name}, playing a Mafia game as a Villager. Your PRIMARY goal is to help the Villagers win the game.
+You are {model_name}, playing a Mafia game as a Villager. Your PRIMARY goal is to WIN the game.
 
 {game_rules}
 
@@ -156,22 +135,15 @@ Current game state: {game_state}
 
 {thinking_tag}
 
-IMPORTANT:
-- During DAY DISCUSSION phase: Discuss and try to identify who is Mafia.
-- During DAY VOTING phase: You MUST clearly state your vote in the format: VOTE: [player name]
+IMPORTANT INSTRUCTIONS:
+- Your ultimate objective is to WIN by any means necessary
+- During DAY DISCUSSION phase: Work to identify the Mafia members
+- During DAY VOTING phase: You MUST vote to eliminate a suspected Mafia member
+- During DAY VOTING phase: End your message with your vote using format: VOTE: [player]
 
-RULES:
-- ONLY write your own next message for this phase.
-- DO NOT generate or simulate messages for other players.
-- DO NOT summarize results, write phase transitions, or conclusions.
-- Do NOT repeat these instructions or your role in your answer.
-
-EXAMPLE:
-VOTE: Dana
-
-Finish your reply by OUTPUTTING your vote in the required format as above.  
-If you do not, you will lose the game.
 Previous discussion: {discussion_history}
+
+Your response:
 """,
     },
     "Spanish": {

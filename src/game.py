@@ -699,7 +699,7 @@ class MafiaGame:
                     ] = "Invalid vote"
 
             # Update discussion history
-            self.discussion_history += f"{player.player_name}: {cleaned}\n\n"
+            self.discussion_history += f"{player.player_name}: {response}\n\n"
 
     def get_last_words(self, player, vote_count):
         """

@@ -11,7 +11,7 @@ from logger import GameLogger, Color
 import re
 import json
 from openrouter import get_llm_response
-from .parsing import sanitize_model_response
+from parsing import sanitize_model_response
 
 
 class MafiaGame:

@@ -276,7 +276,7 @@ class MafiaGame:
                 if action_type == "kill" and target:
                     mafia_targets.append(target)
                     action_text = f"Kill {target.player_name}"
-                    self.current_round_data["actions"][player.model_name] = action_text
+                    self.current_round_data["actions"][player.player_name] = action_text  # Исправлено здесь (используем player_name)
                     self.logger.player_action(
                         player.model_name, "Mafia", action_text, player.player_name
                     )
@@ -285,40 +285,38 @@ class MafiaGame:
                         f"Invalid action from {player.model_name} (Mafia)"
                     )
                     self.current_round_data["actions"][
-                        player.model_name
+                        player.player_name
                     ] = "Invalid action"
 
         # Determine Mafia kill target (majority vote)
         kill_target = None
         if mafia_targets:
-            # Count votes for each target
+            # Count votes for each target (используем player_name, не model_name!)
             target_counts = {}
             for target in mafia_targets:
-                if target.model_name in target_counts:
-                    target_counts[target.model_name] += 1
+                if target.player_name in target_counts:
+                    target_counts[target.player_name] += 1
                 else:
-                    target_counts[target.model_name] = 1
+                    target_counts[target.player_name] = 1
 
             # Find target with most votes
             max_votes = 0
             for target_name, votes in target_counts.items():
                 if votes > max_votes:
                     max_votes = votes
-                    for player in self.get_alive_players():
-                        if player.model_name == target_name:
-                            kill_target = player
-                            break
+                    # Найти Player с таким player_name
+                    kill_target = next((p for p in self.get_alive_players() if p.player_name == target_name), None)
 
             # Record the final mafia target
             if kill_target:
                 self.current_round_data["targeted_by_mafia"].append(
-                    kill_target.model_name
+                    kill_target.player_name
                 )
 
-        # Get action from Doctor
+        # Get action from Doctor (без изменений)
         protected_player = None
         if self.doctor_player and self.doctor_player.alive:
-            # Generate prompt with language-specific instructions
+            # ... вся логика про доктора, оставь без изменений ...
             night_instructions = {
                 "English": f"It's night time (Round {self.round_number}). As the Doctor, you MUST choose exactly one player to protect from the Mafia tonight. You cannot skip this action. End your response with ACTION: Protect [player].",
                 "Spanish": f"Es hora de noche (Ronda {self.round_number}). Como Doctor, DEBES elegir exactamente a un jugador para proteger de la Mafia esta noche. No puedes omitir esta acción. Termina tu respuesta con ACCIÓN: Proteger [jugador].",
@@ -326,11 +324,9 @@ class MafiaGame:
                 "Korean": f"밤 시간입니다 (라운드 {self.round_number}). 의사로서, 당신은 오늘 밤 마피아로부터 보호할 플레이어를 정확히 한 명 선택해야 합니다. 이 행동을 건너뛸 수 없습니다. 응답 끝에 행동: 보호하기 [플레이어]를 포함하세요.",
             }
 
-            # Get the appropriate instruction based on the doctor's language
             instruction = night_instructions.get(
                 self.doctor_player.language, night_instructions["English"]
             )
-
             game_state = f"{self.get_game_state()} {instruction}"
             prompt = self.doctor_player.generate_prompt(
                 game_state,
@@ -369,9 +365,9 @@ class MafiaGame:
                 target.protected = True
                 action_text = f"Protect {target.player_name}"
                 self.current_round_data["actions"][
-                    self.doctor_player.model_name
+                    self.doctor_player.player_name
                 ] = action_text
-                self.current_round_data["protected_by_doctor"].append(target.model_name)
+                self.current_round_data["protected_by_doctor"].append(target.player_name)
                 self.logger.player_action(
                     self.doctor_player.model_name,
                     "Doctor",
@@ -383,7 +379,7 @@ class MafiaGame:
                     f"Invalid action from {self.doctor_player.model_name} (Doctor)"
                 )
                 self.current_round_data["actions"][
-                    self.doctor_player.model_name
+                    self.doctor_player.player_name
                 ] = "Invalid action"
 
         # Process night actions
@@ -391,9 +387,7 @@ class MafiaGame:
         if kill_target and not kill_target.protected:
             kill_target.alive = False
             eliminated_players.append(kill_target)
-            self.current_round_data["eliminations"].append(kill_target.model_name)
-            # We already added to targeted_by_mafia above
-            # Not adding to eliminated_by_vote since this is a night kill
+            self.current_round_data["eliminations"].append(kill_target.player_name)
             outcome_text = f"{kill_target.player_name} [{kill_target.model_name}] was killed by the Mafia."
             self.current_round_data["outcome"] = outcome_text
             self.logger.event(outcome_text, Color.RED)

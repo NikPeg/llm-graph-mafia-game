@@ -475,7 +475,7 @@ class MafiaGame:
             if vote_count > max_votes:
                 max_votes = vote_count
                 for player in alive_players:
-                    if player.model_name == target_name:
+                    if player.player_name == target_name:
                         eliminated_player = player
                         break
 

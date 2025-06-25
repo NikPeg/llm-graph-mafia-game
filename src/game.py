@@ -950,12 +950,20 @@ Format your response as a JSON object with 'title', 'content', and 'one_liner' f
         }
 
 def clean_llm_response(text, player_name):
-    # Ищем последнее (!!!) появление "your response:" (регистр не важен)
+    # 1. Оставить только что после последнего your response:
     parts = re.split(r"(?i)your response: ?", text)
     t = parts[-1].strip() if len(parts) > 1 else text.strip()
-    # Убираем дубликаты имени игрока в начале строки
+    # 2. Убрать имя игрока в начале
     t = re.sub(rf"^{re.escape(player_name)}(\s*:\s*)*", "", t).strip()
-    return t
+    # 3. Если в ответе найден VOTE: <имя>, отрезать всё после этой команды (включая саму строку)
+    vote_match = re.search(r'^(.*?)(^\s*VOTE:\s*\w+\s*$)', t, re.MULTILINE|re.DOTALL)
+    if vote_match:
+        # Вырезаем всё до и включая VOTE: ... (оставляем только то, что до этой команды)
+        before_vote = vote_match.group(1).rstrip()
+        vote_line = vote_match.group(2).strip()
+        return (before_vote + '\n' + vote_line).strip()
+    else:
+        return t
 
 player_names = [
     "Alex",

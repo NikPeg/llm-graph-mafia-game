@@ -423,7 +423,9 @@ class MafiaGame:
     def execute_day_phase(self):
         """
         Execute the day phase of the game.
-        Returns: list of eliminated players
+
+        Returns:
+            list: List of eliminated players.
         """
         self.logger.phase_header("Day", self.round_number)
 
@@ -431,7 +433,7 @@ class MafiaGame:
         messages = []
         votes = {}
 
-        # Discussion
+        # First round: Discussion without voting
         self.logger.event("Discussion Round - Players share their thoughts", Color.CYAN)
         self._conduct_player_interactions(
             alive_players,
@@ -441,65 +443,23 @@ class MafiaGame:
             collect_votes=False,
         )
 
-        # Voting
+        # Voting round
         self.logger.event(
             "Voting Round - Players make their final arguments and vote", Color.CYAN
         )
-        raw_messages = []
-        raw_votes = {}
+        self._conduct_player_interactions(
+            alive_players,
+            "day_voting",
+            f"It's now the VOTING PHASE (Round {self.round_number}). Make your final arguments and YOU MUST VOTE to eliminate a suspected Mafia member. End your message with VOTE: [player name].",
+            messages,
+            collect_votes=True,
+            votes=votes,
+        )
 
-        for player in alive_players:
-            game_state = f"{self.get_game_state()} It's now the VOTING PHASE (Round {self.round_number}). Make your final arguments and YOU MUST VOTE to eliminate a suspected Mafia member. End your message with VOTE: [player name]."
-            prompt = player.generate_prompt(
-                game_state,
-                alive_players,
-                self.mafia_players if player.role == Role.MAFIA else None,
-                self.get_short_discussion_history(),
-            )
-            response = player.get_response(prompt)
-
-            # 1. Обрезаем дневные ACTION, если вдруг случились (игнорируем такие ответы)
-            action_type, action_target = player.parse_night_action(response, alive_players)
-            if action_type:
-                self.logger.warning(f"{player.model_name} attempted to perform an action '{action_type}' during the day and it will be ignored.")
-                continue  # не сохраняем такое сообщение
-
-            # 2. Добавляем голос автоматически, если нужен
-            response = self.ensure_vote_in_response(response, player.player_name, alive_players)
-
-            # 3. Парсим голос
-            vote_target = player.parse_day_vote(response, alive_players)
-            if vote_target:
-                raw_votes[player.model_name] = vote_target.model_name
-                action_text = f"Vote {vote_target.player_name}"
-                self.current_round_data["actions"][player.model_name] = action_text
-                self.logger.player_action(
-                    player.model_name,
-                    player.role.value,
-                    action_text,
-                    player.player_name,
-                )
-            else:
-                self.logger.warning(
-                    f"{player.model_name} failed to cast a valid vote during voting phase, even after auto-insert."
-                )
-                self.current_round_data["actions"][player.model_name] = "Invalid vote"
-
-            # 4. Сохраняем сообщение в историю
-            msg = {
-                "speaker": player.model_name,
-                "content": response,
-                "phase": "day_voting",
-                "role": player.role.value,
-                "player_name": player.player_name,
-            }
-            raw_messages.append(msg)
-            self.discussion_history += f"{player.player_name}: {response}\n\n"
-
-        # Остальная часть функции — подсчет голосов, выявление выбывшего — оставьте без изменений
+        # Count votes by player_name
         vote_counts = {}
         vote_details = {}
-        for voter, target_name in raw_votes.items():
+        for voter, target_name in votes.items():
             if target_name in vote_counts:
                 vote_counts[target_name] += 1
             else:
@@ -509,48 +469,48 @@ class MafiaGame:
                 vote_details[target_name] = []
             vote_details[target_name].append(voter)
 
+        # Find player with most votes by player_name
         max_votes = 0
         eliminated_player = None
         for target_name, vote_count in vote_counts.items():
             if vote_count > max_votes:
                 max_votes = vote_count
-                for player in alive_players:
-                    if player.model_name == target_name:
-                        eliminated_player = player
-                        break
+                # Поиск по живым игрокам по player_name
+                eliminated_player = next((p for p in alive_players if p.player_name == target_name), None)
 
         eliminated_players = []
         if eliminated_player:
+            # Get confirmation vote before elimination
             is_confirmed, confirmation_votes = self.get_confirmation_vote(
                 eliminated_player
             )
             self.current_round_data["confirmation_votes"] = confirmation_votes
 
             if not is_confirmed:
-                confirmation_text = f"The elimination of {eliminated_player.model_name} was rejected by the town."
+                confirmation_text = f"The elimination of {eliminated_player.player_name} was rejected by the town."
                 self.current_round_data["outcome"] += f" {confirmation_text}"
                 self.logger.event(confirmation_text, Color.YELLOW)
-
                 eliminated_player = None
                 eliminated_players = []
                 self.current_round_data["vote_counts"] = vote_counts
                 self.current_round_data["vote_details"] = vote_details
             else:
+                # Get last words from the player before elimination
                 last_words = self.get_last_words(
-                    eliminated_player, vote_counts[eliminated_player.model_name]
+                    eliminated_player, vote_counts[eliminated_player.player_name]
                 )
 
                 eliminated_player.alive = False
                 eliminated_players.append(eliminated_player)
                 self.current_round_data["eliminations"].append(
-                    eliminated_player.model_name
+                    eliminated_player.player_name
                 )
                 self.current_round_data["eliminated_by_vote"] = [
-                    eliminated_player.model_name
+                    eliminated_player.player_name
                 ]
                 self.current_round_data["vote_counts"] = vote_counts
                 self.current_round_data["vote_details"] = vote_details
-                outcome_text = f"{eliminated_player.player_name} [{eliminated_player.model_name}] was eliminated by vote with {vote_counts[eliminated_player.model_name]} votes."
+                outcome_text = f"{eliminated_player.player_name} [{eliminated_player.model_name}] was eliminated by vote with {vote_counts[eliminated_player.player_name]} votes."
                 self.current_round_data["outcome"] += f" {outcome_text}"
                 self.logger.event(outcome_text, Color.YELLOW)
 
@@ -572,12 +532,9 @@ class MafiaGame:
                         }
                     )
 
-                voters = vote_details.get(eliminated_player.model_name, [])
+                voters = vote_details.get(eliminated_player.player_name, [])
                 if voters:
-                    voter_names = [
-                        name.split("/")[-1] for name in voters
-                    ]
-                    voter_text = f"Voted by: {', '.join(voter_names)}"
+                    voter_text = f"Voted by: {', '.join(voters)}"
                     self.current_round_data["voters"] = voters
                     self.logger.event(voter_text, Color.YELLOW)
         else:
@@ -589,7 +546,6 @@ class MafiaGame:
 
         # Set phase to night and increment round
         self.phase = "night"
-        self.current_round_data["messages"].extend(raw_messages)
         self.rounds_data.append(self.current_round_data)
         self.round_number += 1
         self.current_round_data = {

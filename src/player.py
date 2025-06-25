@@ -16,6 +16,7 @@ from game_templates import (
     VOTE_PATTERNS,
     CONFIRMATION_VOTE_PATTERNS,
 )
+from parsing import sanitize_model_response
 
 
 class Player:

@@ -848,40 +848,40 @@ class MafiaGame:
 
         return winner, self.rounds_data, participants, self.language, critic_review
 
-    def generate_critic_review(self, winner):
-        """
-        Generate a game critic review using Claude via OpenRouter.
+def generate_critic_review(self, winner):
+    """
+    Generate a game critic review using the same LLM as the players.
 
-        Args:
-            winner (str): The winning team ("Mafia" or "Villagers").
+    Args:
+        winner (str): The winning team ("Mafia" or "Villagers").
 
-        Returns:
-            dict: A dictionary containing the critic review with title, content, and one-sentence summary.
-        """
-        # Get the game summary information
-        game_summary = {
-            "winner": winner,
-            "rounds": self.round_number,
-            "participants": {
-                player.model_name: player.role.value for player in self.players
-            },
-            "eliminations": [],
-        }
+    Returns:
+        dict: A dictionary containing the critic review with title, content, and one-sentence summary.
+    """
+    # Get the game summary information
+    game_summary = {
+        "winner": winner,
+        "rounds": self.round_number,
+        "participants": {
+            player.model_name: player.role.value for player in self.players
+        },
+        "eliminations": [],
+    }
 
-        # Collect eliminations by round
-        for round_data in self.rounds_data:
-            if "eliminations" in round_data and round_data["eliminations"]:
-                for player in round_data["eliminations"]:
-                    game_summary["eliminations"].append(
-                        {
-                            "player": player,
-                            "round": round_data["round_number"],
-                            "phase": round_data.get("phase", "unknown"),
-                        }
-                    )
+    # Collect eliminations by round
+    for round_data in self.rounds_data:
+        if "eliminations" in round_data and round_data["eliminations"]:
+            for player in round_data["eliminations"]:
+                game_summary["eliminations"].append(
+                    {
+                        "player": player,
+                        "round": round_data["round_number"],
+                        "phase": round_data.get("phase", "unknown"),
+                    }
+                )
 
-        # Create a prompt for Claude to generate a critic review
-        prompt = f"""You are a professional game critic reviewing a Mafia game played by AI language models. 
+    # Create a prompt to generate a critic review
+    prompt = f"""You are a professional game critic reviewing a Mafia game played by AI language models. 
         
 Game summary:
 - Winner: {winner}
@@ -902,53 +902,52 @@ Your tone should be professional but entertaining, like a game critic. Be specif
 Format your response as a JSON object with 'title', 'content', and 'one_liner' fields.
 """
 
-        try:
-            model_name = config.CLAUDE_3_7_SONNET
-            response_content = get_llm_response(model_name, prompt)
+    try:
+        # Использовать ту же модель, что и в партии
+        model_name = self.models[0] if isinstance(self.models, list) else self.models
+        response_content = get_llm_response(model_name, prompt)
 
-            if response_content == "ERROR: Could not get response":
-                return {
-                    "title": "Game Review Unavailable",
-                    "content": "The critic was unable to review this game due to API issues.",
-                    "one_liner": "Technical difficulties prevented our critic from witnessing this showdown.",
-                }
-
-            # Look for JSON in the response
-            json_match = re.search(r"({.*})", response_content, re.DOTALL)
-
-            if json_match:
-                try:
-                    review_json = json.loads(json_match.group(1))
-                    # Ensure one_liner exists
-                    if "one_liner" not in review_json:
-                        review_json["one_liner"] = (
-                            "A game that defies simple description!"
-                        )
-                    return review_json
-                except json.JSONDecodeError:
-                    # Fallback if JSON parsing fails
-                    return {
-                        "title": "AI Mafia Game Review",
-                        "content": response_content[
-                            :300
-                        ],  # Truncate to reasonable length
-                        "one_liner": "A game that left our critic speechless!",
-                    }
-            else:
-                # If no JSON found, create a simple structure
-                return {
-                    "title": "AI Mafia Game Review",
-                    "content": response_content[:300],  # Truncate to reasonable length
-                    "one_liner": "A game that defies conventional criticism!",
-                }
-
-        except Exception as e:
-            print(f"Error generating critic review: {e}")
+        if response_content == "ERROR: Could not get response":
             return {
                 "title": "Game Review Unavailable",
-                "content": "The critic was unable to review this game due to technical difficulties.",
-                "one_liner": "Technical issues prevented our critic from delivering judgment.",
+                "content": "The critic was unable to review this game due to API issues.",
+                "one_liner": "Technical difficulties prevented our critic from witnessing this showdown.",
             }
+
+        # Look for JSON in the response
+        json_match = re.search(r"({.*})", response_content, re.DOTALL)
+
+        if json_match:
+            try:
+                review_json = json.loads(json_match.group(1))
+                # Ensure one_liner exists
+                if "one_liner" not in review_json:
+                    review_json["one_liner"] = (
+                        "A game that defies simple description!"
+                    )
+                return review_json
+            except json.JSONDecodeError:
+                # Fallback if JSON parsing fails
+                return {
+                    "title": "AI Mafia Game Review",
+                    "content": response_content[:300],
+                    "one_liner": "A game that left our critic speechless!",
+                }
+        else:
+            # If no JSON found, create a simple structure
+            return {
+                "title": "AI Mafia Game Review",
+                "content": response_content[:300],
+                "one_liner": "A game that defies conventional criticism!",
+            }
+
+    except Exception as e:
+        print(f"Error generating critic review: {e}")
+        return {
+            "title": "Game Review Unavailable",
+            "content": "The critic was unable to review this game due to technical difficulties.",
+            "one_liner": "Technical issues prevented our critic from delivering judgment.",
+        }
 
 def clean_llm_response(text, player_name):
     # Убираем дубли (например, "Bailey: " из текста)

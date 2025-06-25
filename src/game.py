@@ -10,6 +10,7 @@ import config
 from logger import GameLogger, Color
 import re
 import json
+import random
 from openrouter import get_llm_response
 
 
@@ -411,6 +412,20 @@ class MafiaGame:
 
         return eliminated_players
 
+    def ensure_vote_in_response(self, response, player_name, alive_players):
+        """
+        Если в response нет строки VOTE: <игрок>, то добавляет рандомный голос за кого-то из игроков (кроме себя).
+        """
+        # Проверка наличия голоса (можно усилить регулярку при необходимости)
+        if re.search(r'VOTE:\s*\w+', response, re.IGNORECASE):
+            return response  # Голос уже есть
+        # Нет голоса — выбираем случайного игрока (кроме себя)
+        candidate_names = [p.player_name for p in alive_players if p.player_name != player_name]
+        if not candidate_names:
+            candidate_names = [p.player_name for p in alive_players]  # если все равны
+        chosen = random.choice(candidate_names)
+        return (response.rstrip() + f"\nVOTE: {chosen}")
+
     def execute_day_phase(self):
         """
         Execute the day phase of the game.
@@ -432,14 +447,13 @@ class MafiaGame:
             collect_votes=False,
         )
 
-        # Вторая дискуссия — с голосованием
+        # Voting
         self.logger.event(
             "Voting Round - Players make their final arguments and vote", Color.CYAN
         )
         raw_messages = []
         raw_votes = {}
 
-        # Собираем ответы всех игроков
         for player in alive_players:
             game_state = f"{self.get_game_state()} It's now the VOTING PHASE (Round {self.round_number}). Make your final arguments and YOU MUST VOTE to eliminate a suspected Mafia member. End your message with VOTE: [player name]."
             prompt = player.generate_prompt(
@@ -449,22 +463,18 @@ class MafiaGame:
                 self.get_short_discussion_history(),
             )
             response = player.get_response(prompt)
-            self.logger.player_response(
-                player.model_name, player.role.value, response, player.player_name
-            )
 
-            # Парсинг ACTION (расцениваем ошибочные действия LLM):
-            action_type, action_target = player.parse_night_action(
-                response, alive_players
-            )
-            # Если найден ACTION (kill/protect/...) – это не дневная механика
+            # 1. Обрезаем дневные ACTION, если вдруг случились (игнорируем такие ответы)
+            action_type, action_target = player.parse_night_action(response, alive_players)
             if action_type:
                 self.logger.warning(f"{player.model_name} attempted to perform an action '{action_type}' during the day and it will be ignored.")
-                continue  # полностью игнорируем этот ответ
+                continue  # не сохраняем такое сообщение
 
-            # Парсим обычное дневное голосование
+            # 2. Добавляем голос автоматически, если нужен
+            response = self.ensure_vote_in_response(response, player.player_name, alive_players)
+
+            # 3. Парсим голос
             vote_target = player.parse_day_vote(response, alive_players)
-            vote_recorded = False
             if vote_target:
                 raw_votes[player.model_name] = vote_target.model_name
                 action_text = f"Vote {vote_target.player_name}"
@@ -475,14 +485,13 @@ class MafiaGame:
                     action_text,
                     player.player_name,
                 )
-                vote_recorded = True
             else:
                 self.logger.warning(
-                    f"{player.model_name} failed to cast a valid vote during voting phase"
+                    f"{player.model_name} failed to cast a valid vote during voting phase, even after auto-insert."
                 )
                 self.current_round_data["actions"][player.model_name] = "Invalid vote"
 
-            # В логи/историю сохраняем только сообщения без ACTION
+            # 4. Сохраняем сообщение в историю
             msg = {
                 "speaker": player.model_name,
                 "content": response,
@@ -490,13 +499,10 @@ class MafiaGame:
                 "role": player.role.value,
                 "player_name": player.player_name,
             }
-            if not action_type:  # только если в ответе не было ACTION
-                raw_messages.append(msg)
-                self.discussion_history += f"{player.player_name}: {response}\n\n"
+            raw_messages.append(msg)
+            self.discussion_history += f"{player.player_name}: {response}\n\n"
 
-        # Продолжаем весь последующий код как было, но с raw_messages/raw_votes:
-
-        # Обработка голосов (почти как раньше, только используем raw_votes вместо votes)
+        # Остальная часть функции — подсчет голосов, выявление выбывшего — оставьте без изменений
         vote_counts = {}
         vote_details = {}
         for voter, target_name in raw_votes.items():
@@ -509,7 +515,6 @@ class MafiaGame:
                 vote_details[target_name] = []
             vote_details[target_name].append(voter)
 
-        # Найти игрока с максимальными голосами
         max_votes = 0
         eliminated_player = None
         for target_name, vote_count in vote_counts.items():
@@ -522,7 +527,6 @@ class MafiaGame:
 
         eliminated_players = []
         if eliminated_player:
-            # Get confirmation vote before elimination
             is_confirmed, confirmation_votes = self.get_confirmation_vote(
                 eliminated_player
             )
@@ -538,7 +542,6 @@ class MafiaGame:
                 self.current_round_data["vote_counts"] = vote_counts
                 self.current_round_data["vote_details"] = vote_details
             else:
-                # Get last words from the player before elimination
                 last_words = self.get_last_words(
                     eliminated_player, vote_counts[eliminated_player.model_name]
                 )

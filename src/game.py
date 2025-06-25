@@ -993,35 +993,40 @@ player_names = [
 
 def clean_llm_response(text, player_name):
     """
-    Оставляет только строки, которые:
-      - начинаются с player_name: (с удаленным префиксом)
-      - или не начинаются ни с какого <имя>: (то есть это одиночные мысли без пометки спикера)
-    Все остальные строки (от других игроков) удаляет.
+    Оставляет только те строки, которые идут до первой строки, начинающейся с любого "&lt;чужое_имя&gt;:".
+    Свои строки ("player_name: ...") оставляет (но без префикса).
     """
     lines = text.splitlines()
-    result = []
-    # Составим регулярку для поиска "<имя_из_списка>:"
-    all_names_pattern = r"^(" + "|".join(re.escape(name) for name in player_names) + r")\s*:"
+    # паттерн для чужих имён
+    other_names = [name for name in player_names if name != player_name]
+    if other_names:
+        other_names_pattern = r"^(" + "|".join(re.escape(name) for name in other_names) + r")\s*:"
+    else:
+        other_names_pattern = r"^$"  # ничего не найдёт
+
     own_name_pattern = rf"^{re.escape(player_name)}\s*:"
+    result = []
     for line in lines:
-        # Если строка начинается с своего имени
-        if re.match(own_name_pattern, line):
-            # Удаляем имя и двоеточие
+        # Если строка с чужим именем — всё, стоп!
+        if re.match(other_names_pattern, line):
+            break
+        # Если строка с твоим именем — включаем, убрав имя
+        elif re.match(own_name_pattern, line):
             result.append(re.sub(own_name_pattern, "", line, count=1).strip())
-        # Если не начинается с чьего-либо имени из player_names, просто добавляем
-        elif not re.match(all_names_pattern, line):
+        # Если строка не начинается с любого имени: просто сохраняем
+        elif not re.match(r"^(" + "|".join(re.escape(name) for name in player_names) + r")\s*:", line):
             result.append(line.strip())
-        # Если это строка другого игрока — игнорируем
-    # Собираем все обратно, оставляя только свои/безымянные строки
+    # Убираем пустые строки в начале/конце
     return "\n".join([line for line in result if line.strip()])
 
+# Пример:
 if __name__ == "__main__":
-    player_names = ["Avery", "Dana", "Logan", "Quinn"]
-    sample = """
-Avery: *Avery thinks about the situation.* It's true that Quinn hasn't said much, but he seems genuinely worried about being killed.
-On the other hand, Logan's vote for Quinn could be a ploy.
-Dana: This is a tough call. I don't want to vote for Quinn just because Logan did.
-I guess we'll have to wait and see what happens during the night phase.
+    text = """
+*Avery thinks about the situation.* It's true that Quinn hasn't said much, but he seems genuinely worried about being killed.
+Avery: Well, my vote goes for Logan.
 Avery: VOTE: Logan
+Dana: This is a tough call. I don't want to vote for Quinn.
+Quinn: Suspicious!
+Logan: DEFENSE
 """
-    print(clean_llm_response(sample, "Avery"))
+    print(clean_llm_response(text, "Avery"))

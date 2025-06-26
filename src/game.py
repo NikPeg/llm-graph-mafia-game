@@ -914,7 +914,7 @@ class MafiaGame:
         critic_review = self.generate_critic_review(winner)
 
         # Log game end
-        self.logger.game_end(1, winner, self.round_number)
+        self.logger.game_end(game_number, winner, self.round_number)
 
         return winner, self.rounds_data, participants, self.language, critic_review
 
@@ -928,12 +928,13 @@ class MafiaGame:
         Returns:
             dict: A dictionary containing the critic review with title, content, and one-sentence summary.
         """
+
         # Get the game summary information
         game_summary = {
             "winner": winner,
             "rounds": self.round_number,
             "participants": {
-                player.model_name: player.role.value for player in self.players
+                player.player_name: player.role.value for player in self.players
             },
             "eliminations": [],
         }
@@ -953,30 +954,38 @@ class MafiaGame:
         # Create a prompt for Claude to generate a critic review
         prompt = f"""You are a professional game critic reviewing a Mafia game played by AI language models. 
         
-Game summary:
-- Winner: {winner}
-- Number of rounds: {self.round_number}
-- Players and roles: {game_summary['participants']}
-- Eliminations: {game_summary['eliminations']}
-
-Write a short, entertaining critic review of this game. Include:
-1. A catchy title for your review (max 50 characters)
-2. A concise review (max 200 words) that analyzes:
-   - The game's pacing and length
-   - Interesting strategic moves or blunders
-   - The performance of the winning team
-   - Any particularly noteworthy moments
-3. A one-sentence intense summary that captures the essence of the game in a dramatic way (max 100 characters)
-
-Your tone should be professional but entertaining, like a game critic. Be specific about this particular game.
-Format your response as a JSON object with 'title', 'content', and 'one_liner' fields.
-"""
+    Game summary:
+    - Winner: {winner}
+    - Number of rounds: {self.round_number}
+    - Players and roles: {game_summary['participants']}
+    - Eliminations: {game_summary['eliminations']}
+    
+    Write a short, entertaining critic review of this game. Include:
+    1. A catchy title for your review (max 50 characters)
+    2. A concise review (max 200 words) that analyzes:
+       - The game's pacing and length
+       - Interesting strategic moves or blunders
+       - The performance of the winning team
+       - Any particularly noteworthy moments
+    3. A one-sentence intense summary that captures the essence of the game in a dramatic way (max 100 characters)
+    
+    Your tone should be professional but entertaining, like a game critic. Be specific about this particular game.
+    Format your response as a JSON object with 'title', 'content', and 'one_liner' fields.
+    """
 
         try:
             model_name = config.CLAUDE_3_7_SONNET
+
+            # LOG: Показываем prompt для критика-LLM (если нужно)
+            print("\n[CRITIC REVIEW PROMPT]:\n" + prompt + "\n")
+
             response_content = get_llm_response(model_name, prompt)
 
+            # LOG: Показываем сырой ответ от модели
+            print("\n[CRITIC REVIEW RAW LLM RESPONSE]:\n" + str(response_content) + "\n")
+
             if response_content == "ERROR: Could not get response":
+                print("[CRITIC REVIEW ERROR]: Model did not return a review.\n")
                 return {
                     "title": "Game Review Unavailable",
                     "content": "The critic was unable to review this game due to API issues.",
@@ -994,18 +1003,26 @@ Format your response as a JSON object with 'title', 'content', and 'one_liner' f
                         review_json["one_liner"] = (
                             "A game that defies simple description!"
                         )
+
+                    # LOG: Показываем разобранное ревью (заголовок, текст, one_liner)
+                    print("[CRITIC REVIEW PARSED]:")
+                    print("TITLE:", review_json.get("title", ""))
+                    print("CONTENT:", review_json.get("content", ""))
+                    print("ONE LINER:", review_json.get("one_liner", ""))
+                    print()
+
                     return review_json
                 except json.JSONDecodeError:
                     # Fallback if JSON parsing fails
+                    print("[CRITIC REVIEW ERROR]: JSONDecodeError, sending fallback string.\n")
                     return {
                         "title": "AI Mafia Game Review",
-                        "content": response_content[
-                                   :300
-                                   ],  # Truncate to reasonable length
+                        "content": response_content[:300],
                         "one_liner": "A game that left our critic speechless!",
                     }
             else:
                 # If no JSON found, create a simple structure
+                print("[CRITIC REVIEW WARNING]: No JSON object found in the response, returning head of string.\n")
                 return {
                     "title": "AI Mafia Game Review",
                     "content": response_content[:300],  # Truncate to reasonable length

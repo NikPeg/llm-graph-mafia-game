@@ -677,9 +677,10 @@ class MafiaGame:
 
             if player.role != Role.MAFIA:
                 graph = self.discussion_graph_from_history()
-                self.logger.log(
-                    f"\n[VILLAGER GRAPH for {player.player_name}]:\n{graph}", Color.CYAN
-                )
+                if graph.strip() and config.GRAPH_DEBUG:
+                    self.logger.log(
+                        f"\n[VILLAGER GRAPH for {player.player_name}]:\n{graph}", Color.CYAN
+                    )
                 discussion_context = f"{graph}\n{self.discussion_history_without_thinkings()}"
             else:
                 discussion_context = self.discussion_history_without_thinkings()

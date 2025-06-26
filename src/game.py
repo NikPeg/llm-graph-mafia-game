@@ -980,12 +980,12 @@ class MafiaGame:
             model_name = config.CLAUDE_3_7_SONNET
 
             # LOG: Показываем prompt для критика-LLM (если нужно)
-            print("\n[CRITIC REVIEW PROMPT]:\n" + prompt + "\n")
+            # print("\n[CRITIC REVIEW PROMPT]:\n" + prompt + "\n")
 
             response_content = get_llm_response(model_name, prompt)
 
             # LOG: Показываем сырой ответ от модели
-            print("\n[CRITIC REVIEW RAW LLM RESPONSE]:\n" + str(response_content) + "\n")
+            # print("\n[CRITIC REVIEW RAW LLM RESPONSE]:\n" + str(response_content) + "\n")
 
             if response_content == "ERROR: Could not get response":
                 print("[CRITIC REVIEW ERROR]: Model did not return a review.\n")
@@ -1010,8 +1010,8 @@ class MafiaGame:
                     # LOG: Показываем разобранное ревью (заголовок, текст, one_liner)
                     print("[CRITIC REVIEW PARSED]:")
                     print("TITLE:", review_json.get("title", ""))
-                    print("CONTENT:", review_json.get("content", ""))
                     print("ONE LINER:", review_json.get("one_liner", ""))
+                    print("CONTENT:", review_json.get("content", ""))
                     print()
 
                     return review_json

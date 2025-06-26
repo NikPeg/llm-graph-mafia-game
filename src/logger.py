@@ -219,6 +219,10 @@ class GameLogger:
         """Log game event."""
         self.print(f"EVENT: {text}", color, bold=True)
 
+    def log(self, text, color=Color.YELLOW):
+        """Log game."""
+        self.print(text, color, bold=True)
+
     def error(self, text):
         """Log an error message."""
         self.print(f"ERROR: {text}", Color.RED, bold=True)

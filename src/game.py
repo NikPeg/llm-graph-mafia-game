@@ -678,7 +678,7 @@ class MafiaGame:
                 reminder = voting_reminders.get(player.language, voting_reminders["English"])
                 game_state += reminder
 
-            if player.role == Role.VILLAGER:
+            if player.role != Role.MAFIA:
                 discussion_context = self.discussion_graph_from_history()
             else:
                 discussion_context = self.discussion_history_without_thinkings()
@@ -689,8 +689,8 @@ class MafiaGame:
                 self.mafia_players if player.role == Role.MAFIA else None,
                 discussion_context,
             )
-            if player.role == Role.VILLAGER and config.GRAPH_DEBUG:
-                self.logger.event(
+            if player.role != Role.MAFIA and config.GRAPH_DEBUG:
+                self.logger.log(
                     f"\n[VILLAGER GRAPH for {player.player_name}]:\n{discussion_context}\n", Color.CYAN
                 )
 

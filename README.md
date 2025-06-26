@@ -1,67 +1,110 @@
-# LLM Mafia Game
+# GraphEnhancedLLMGame
 
-<div align="center">
-  <img src="./docs/static/img/banner.png" alt="LLM Mafia Game Banner" width="100%" />
-</div>
+Проект исследует применение графовых методов для улучшения игровых стратегий языковых моделей в социальной дедуктивной игре типа "Мафия".
+Сравниваются различные техники инжектирования графов (коммуникационных, профильных, исторических) для преодоления ограничений контекстного окна и улучшения принятия решений в условиях неполной информации.
+---
 
-https://github.com/user-attachments/assets/54976d88-6ef1-4c1c-9737-8635b33fd9f0
+## Быстрый старт
 
-## Overview
+> **Внимание:** для запуска проекта требуется производительная видеокарта (например, NVIDIA A100 или мощнее), так как все симуляции работают с большими локальными LLM.
+### 1. Запуск LLM-сервера
 
-This project allows multiple LLMs to compete against each other in Mafia games. The game is simulated multiple times, and the winning rate of each model is recorded and displayed on a dashboard. You can also see the full game history of each game. The game rules are based on the [Mafia Game Rules](docs/GAME_RULE.md).
+Для запуска используйте скрипт [`run_llm.sh`](./run_llm.sh).  
+Он стартует vllm-сервер с вашей моделью.
 
-## Quick Start
+**Пример:**
+```bash
+# Запустить с моделью по умолчанию (gryphe/mythomax-l2-13b)
+./run_llm.sh
 
-### 1. Clone the Repository
-
+# Или указать другую поддерживаемую модель, например:
+./run_llm.sh mistralai/mistral-small-24b-instruct-2501
 ```
-git clone https://github.com/guzus/llm-mafia-game.git
-cd llm-mafia-game
+Логи работы сервера пишутся в `vllm.log`.
+
+---
+
+### 2. Запуск симуляции
+
+Основной скрипт — [`src/simulate.py`](./src/simulate.py).  
+Он запускает серию игр в мафию между LLM-агентами-клонами.
+
+**Пример:**
+```bash
+python3 src/simulate.py
 ```
+По умолчанию используются параметры из `src/config.py`, включая количество игр, количество участников, роль модели и т.д.
 
-### 2. Install Dependencies
+---
 
-```
-uv sync
-```
+### 3. Конфигурация
 
-### 3. Set Up Firebase
+- Все настройки (количество игроков, список доступных моделей, имя используемой модели) — в файле [`src/config.py`](./src/config.py).
+- Модель для симуляции указывается:
+    - Аргументом для `run_llm.sh`
+    - Или переменной окружения `MODEL_NAME`
+    - Или прямо в `config.py`
 
-- Create a Firebase project and enable the Cloud Firestore.
-- Download your `firebase_credentials.json` and place it in the project directory.
+---
 
-### 4. Set Up OpenRouter API
+### 4. Логи и вывод
 
-- Sign up at [OpenRouter](https://openrouter.ai/).
-- Get an API key and add it to `config.py` (`OPENROUTER_API_KEY`).
+- После симуляции вы увидите подробные игровые логи, выборы, распределение ролей, анализ критика по итогам каждой партии.
+- Итоговая статистика: кто чаще выигрывает (мафия или мирные).
+- Дополнительно можно изучить графы отношений LLM-игроков для гипотез и анализа стратегии.
 
-### 5. Run the Mafia Game Simulation
+---
 
-```
-uv run src/simulate.py
-```
+## Доступные модели
 
-This will:
+(см. полный список в `src/config.py`)
+Примеры:
+- `gryphe/mythomax-l2-13b` (по умолчанию)
+- `mistralai/mistral-small-24b-instruct-2501`
+- `deepseek/deepseek-llm-7b-chat`
+- `deepseek/deepseek-r1-distill-llama-70b`
+- `nousresearch/hermes-3-llama-3.1-70b`
+- `deepseek-ai/DeepSeek-R1-Distill-Qwen-32B`
+---
 
-- Run Mafia games `n` times.
-- Store the results in Firebase.
-- Print the final statistics.
+## Описание структуры
 
-### 6. Start the Dashboard
+- `run_llm.sh` — скрипт запуска локального LLM-сервера (vllm)
+- `src/simulate.py` — симуляция игр в мафию
+- `src/config.py` — основные параметры и список моделей
 
-```
-uv run src/dashboard.py
-```
+---
 
-- Open `http://127.0.0.1:5000/` in your browser to view the leaderboard.
+## Варианты использования
 
-## Future Improvements
+- Исследование динамики коллективного принятия решений LLM'ами
+- Тестирование новых моделей на "детективном" поведении
+- Валидация/разработка автоматических метрик доверия к генеративным агентам
+- Быстрая отладка игровых циклов для собственных LLM и промпт-инженерии
 
-- Human vs LLMs 3D Mafia Game
-- Extend to other games (Poker, etc.) beyond Mafia.
-- Create a real-time viewer, chat, and betting system for ongoing games.
-- Add more complex roles like Detective, Jester, Sheriff, etc.
+---
 
-## Development
+## Частые вопросы
 
-See [DEVELOPMENT.md](docs/DEVELOPMENT.md) for more details on the development process.
+- **Q:** Нужно ли что-то кроме Python и vllm?  
+  **A:** Нет. Библиотека vllm для сервера + зависимости из requirements.txt.
+
+- **Q:** Можно ли проводить эксперименты с несколькими моделями?  
+  **A:** В текущем коде поддержан выбор одной используемой модели на запуск.
+
+- **Q:** Где анализировать поведение агентов и результаты партий?  
+  **A:** В логах симуляции и итоговом выводе статистики по ролям.
+
+---
+
+## Рекомендации
+
+- Используйте одновременный запуск vllm только с ОДНОЙ моделью на сервер (ограничение проекта).
+- Для ускоренной симуляции или повышения сложности меняйте роли и параметры в config.py.
+- Графы отношений и внутриигровые решения — отличное поле для экспериментов с интерпретацией поведения LLM.
+
+---
+
+## Контакты
+
+- Автор и вопросы: t.me/nikpeg

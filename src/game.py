@@ -689,10 +689,10 @@ class MafiaGame:
                 self.mafia_players if player.role == Role.MAFIA else None,
                 discussion_context,
             )
-            # if player.role != Role.MAFIA and config.GRAPH_DEBUG:
-            #     self.logger.log(
-            #         f"\n[VILLAGER GRAPH for {player.player_name}]:\n{discussion_context}\n", Color.CYAN
-            #     )
+            if player.role != Role.MAFIA and config.GRAPH_DEBUG:
+                self.logger.log(
+                    f"\n[VILLAGER GRAPH for {player.player_name}]:\n{discussion_context}\n", Color.CYAN
+                )
 
             # Получение и постобработка ответа
             response = player.get_response(prompt)

@@ -221,7 +221,8 @@ class GameLogger:
 
     def log(self, text, color=Color.YELLOW):
         """Log game."""
-        self.print(text, color, bold=True)
+        if text:
+            self.print(text, color, bold=True)
 
     def error(self, text):
         """Log an error message."""

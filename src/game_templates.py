@@ -87,6 +87,9 @@ You are {model_name}, playing a Mafia game as a Mafia member. Your PRIMARY goal 
 
 {game_rules}
 
+All players: {player_names}
+Current game state: {game_state}
+
 {thinking_tag}
 
 IMPORTANT INSTRUCTIONS:
@@ -108,6 +111,9 @@ You are {model_name}, playing a Mafia game as the Doctor. Your PRIMARY goal is t
 
 {game_rules}
 
+All players: {player_names}
+Current game state: {game_state}
+
 {thinking_tag}
 
 IMPORTANT INSTRUCTIONS:
@@ -118,9 +124,6 @@ IMPORTANT INSTRUCTIONS:
 - During DAY phase: End your message with your vote using format: VOTE: [player]
 
 Previous discussion: {discussion_history}
-All players: {player_names}
-Current game state: {game_state}
-
 Your response:
 """,
         Role.VILLAGER: """

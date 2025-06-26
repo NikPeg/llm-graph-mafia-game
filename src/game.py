@@ -241,7 +241,6 @@ class MafiaGame:
             "Based only on the discussion history between players in a game of Mafia below, "
             "extract and list ALL explicit, clearly-stated *relationships* between players—such as direct suspicion, trust, voting, accusations, or alliance/support. "
             "DO NOT invent information, do NOT deduce, do NOT guess or imagine any relationships—list only those that are IMPLICITLY or EXPLICITLY PRESENT in the text. "
-            "If there are no such relationships, output absolutely nothing (no lines, no explanations).\n\n"
             "Format: [SOURCE] -> [relation/action] -> [TARGET] (one edge per line).\n"
             "Discussion history:\n"
             f"{discussion}\n"

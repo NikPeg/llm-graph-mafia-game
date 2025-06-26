@@ -227,6 +227,40 @@ class MafiaGame:
         # Собираем обратно с двумя переводами строк
         return '\n\n'.join(entries).strip()
 
+    def discussion_graph_from_history(self):
+        """
+        Генерирует граф отношений между игроками на основе последних сообщений (обсуждение дня).
+        Запрашивает LLM выделить явные связи: "X подозревает/доверяет Y" и т.д.
+        Возвращает строку-граф для промпта.
+        """
+        # Возьмём последние N сообщений
+        discussion = self.discussion_history_without_thinkings()
+        # Можно ограничивать по длине, если нужно
+
+        # Составим промпт для LLM:
+        graph_prompt = (
+            "Based on the discussion history below between players in a game of Mafia, "
+            "extract and list all explicit or clear implicit *relationships* (like suspicion, trust, accusations, support, voting intentions) "
+            "between players in the format: [SOURCE] -> [relation/action] -> [TARGET]. "
+            "Example output:\n"
+            "Bailey -> suspects -> Riley\n"
+            "Morgan -> trusts -> Kai\n"
+            "Ellis -> votes for -> Riley\n"
+            "Please analyze the following discussion and output such relationship edges explicitly (one per line):\n\n"
+            f"{discussion}\n"
+            "\nList of relationship edges:"
+        )
+
+        # Используем одну и ту же модель, что и в игре (или любую другую, в зависимости от нужд)
+        # self.models[0] или актуальный model_name
+        model_name = self.models[0]
+        graph_text = get_llm_response(model_name, graph_prompt)
+
+        # Можно здесь обработать graph_text, например убрать пустые строки или лишние слова, если нужно...
+        # В простейшем случае — просто возвращаем, чтобы включить в промпт.
+
+        return graph_text.strip()
+
     def execute_night_phase(self):
         """
         Execute the night phase of the game.
@@ -645,11 +679,16 @@ class MafiaGame:
                 reminder = voting_reminders.get(player.language, voting_reminders["English"])
                 game_state += reminder
 
+            if player.role == Role.VILLAGER:
+                discussion_context = self.discussion_graph_from_history()
+            else:
+                discussion_context = self.discussion_history_without_thinkings()
+
             prompt = player.generate_prompt(
                 game_state,
                 alive_players,
                 self.mafia_players if player.role == Role.MAFIA else None,
-                self.discussion_history_without_thinkings(),
+                discussion_context,
             )
 
             # Получение и постобработка ответа

@@ -46,10 +46,8 @@ class MafiaGame:
             "outcome": "",
         }
 
-        self.unique_models = config.UNIQUE_MODELS
-
         # Use provided models or default from config
-        self.models = models if models else config.MODELS
+        self.models = models if models else [config.DEFAULT_MODEL]
 
         # Set random seed if specified
         if config.RANDOM_SEED is not None:

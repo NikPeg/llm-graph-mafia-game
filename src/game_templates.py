@@ -86,6 +86,9 @@ PROMPT_TEMPLATES = {
 You are {model_name}, playing a Mafia game as a Mafia member. Your PRIMARY goal is to WIN the game.
 
 {game_rules}
+Other Mafia members: {mafia_members}
+All players: {player_names}
+Current game state: {game_state}
 
 All players: {player_names}
 Current game state: {game_state}
@@ -100,10 +103,6 @@ IMPORTANT INSTRUCTIONS:
 - During DAY phase: End your message with your vote using format: VOTE: [player]
 
 Previous discussion: {discussion_history}
-Other Mafia members: {mafia_members}
-All players: {player_names}
-Current game state: {game_state}
-
 Your response:
 """,
         Role.DOCTOR: """

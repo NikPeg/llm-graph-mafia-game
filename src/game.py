@@ -690,9 +690,9 @@ class MafiaGame:
                 self.mafia_players if player.role == Role.MAFIA else None,
                 discussion_context,
             )
-            if player.role == Role.VILLAGER:
+            if player.role == Role.VILLAGER and config.GRAPH_DEBUG:
                 self.logger.event(
-                    f"\n[VILLAGER PROMPT for {player.player_name}]:\n{prompt}\n", Color.CYAN
+                    f"\n[VILLAGER GRAPH for {player.player_name}]:\n{discussion_context}\n", Color.CYAN
                 )
 
             # Получение и постобработка ответа

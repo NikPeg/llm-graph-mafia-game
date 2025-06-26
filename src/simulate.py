@@ -161,6 +161,13 @@ def run_simulation(
     elapsed_time = time.time() - start_time
     stats["elapsed_time"] = elapsed_time
     logger.stats(stats)
+    num = stats["completed_games"]
+    mafia = stats["mafia_wins"]
+    village = stats["villager_wins"]
+    print("\n======= GAME RESULT SUMMARY =======")
+    print(f"Всего партий: {num}")
+    print(f"Побед мафии: {mafia}   ({mafia/num:.1%})")
+    print(f"Побед мирных: {village}   ({village/num:.1%})")
     return stats
 
 if __name__ == "__main__":

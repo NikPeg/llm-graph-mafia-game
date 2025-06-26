@@ -686,7 +686,7 @@ class MafiaGame:
                 self.mafia_players if player.role == Role.MAFIA else None,
                 discussion_context,
             )
-            if player.role != Role.MAFIA and config.GRAPH_DEBUG:
+            if player.role != Role.MAFIA and config.GRAPH_DEBUG and discussion_context.strip():
                 self.logger.log(
                     f"\n[VILLAGER GRAPH for {player.player_name}]:\n{discussion_context}\n", Color.CYAN
                 )

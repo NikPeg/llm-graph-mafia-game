@@ -533,20 +533,20 @@ class MafiaGame:
                     self.current_round_data["last_words"] = last_words
                     self.logger.event(last_words_text, Color.CYAN)
                     # Add last words to discussion history
-                    self.discussion_history += (
-                        f"{eliminated_player.player_name}: {last_words}\n\n"
-                    )
+                    # self.discussion_history += (
+                    #     f"{eliminated_player.player_name}: {last_words}\n\n"
+                    # )
                     # Add to messages
-                    self.current_round_data["messages"].append(
-                        {
-                            "speaker": eliminated_player.player_name,
-                            "content": last_words,
-                            "phase": "day",
-                            "role": eliminated_player.role.value,
-                            "type": "last_words",
-                            "player_name": eliminated_player.player_name,
-                        }
-                    )
+                    # self.current_round_data["messages"].append(
+                    #     {
+                    #         "speaker": eliminated_player.player_name,
+                    #         "content": last_words,
+                    #         "phase": "day",
+                    #         "role": eliminated_player.role.value,
+                    #         "type": "last_words",
+                    #         "player_name": eliminated_player.player_name,
+                    #     }
+                    # )
 
                 # Log who voted for the eliminated player
                 voters = vote_details.get(eliminated_player.player_name, [])

@@ -244,11 +244,11 @@ class MafiaGame:
                     self.mafia_players,
                     self.discussion_history_without_thinkings(),
                 )
-                self.logger.event(
-                    f"\n[NIGHT PHASE PROMPT for {player.player_name}]:\n{prompt}\n",
-                    Color.YELLOW
-                )
-                print("ALIVE PLAYERS AT NIGHT:", [p.player_name for p in self.get_alive_players()])
+                # self.logger.event(
+                #     f"\n[NIGHT PHASE PROMPT for {player.player_name}]:\n{prompt}\n",
+                #     Color.YELLOW
+                # )
+                # print("ALIVE PLAYERS AT NIGHT:", [p.player_name for p in self.get_alive_players()])
 
                 # Get and sanitize response
                 response = player.get_response(prompt)

@@ -25,6 +25,8 @@ MODELS = os.getenv(
     "gryphe/mythomax-l2-13b,mistralai/mistral-small-24b-instruct-2501,deepseek/deepseek-llm-7b-chat,deepseek/deepseek-r1-distill-llama-70b,nousresearch/hermes-3-llama-3.1-70b,deepseek-ai/DeepSeek-R1-Distill-Qwen-32B"
 ).split(",")
 
+CLAUDE_3_7_SONNET = MODELS[0]
+
 # Game configuration
 NUM_GAMES = int(os.getenv("NUM_GAMES", 1))
 PLAYERS_PER_GAME = int(os.getenv("PLAYERS_PER_GAME", 8))

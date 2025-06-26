@@ -357,16 +357,16 @@ class MafiaGame:
                             break
 
         # No valid votes? Choose a random valid non-mafia target (auto-fallback)
-        # if not kill_target:
-        #     possible_targets = [p for p in alive_players if p.role != Role.MAFIA]
-        #     if possible_targets:
-        #         import random
-        #         kill_target = random.choice(possible_targets)
-        #         action_text = f"Auto-Kill {kill_target.player_name}"
-        #         self.logger.player_action(
-        #             "AUTO", "Mafia", action_text, ""
-        #         )
-        #         self.current_round_data["actions"]["AUTO"] = action_text
+        if not kill_target:
+            possible_targets = [p for p in alive_players if p.role != Role.MAFIA]
+            if possible_targets:
+                import random
+                kill_target = random.choice(possible_targets)
+                action_text = f"Auto-Kill {kill_target.player_name}"
+                self.logger.player_action(
+                    "AUTO", "Mafia", action_text, ""
+                )
+                self.current_round_data["actions"]["AUTO"] = action_text
 
         # Record the final mafia target
         if kill_target:

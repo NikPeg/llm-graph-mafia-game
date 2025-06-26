@@ -234,16 +234,15 @@ class MafiaGame:
         Возвращает строку-граф для промпта или пустую строку, если ничего нет.
         """
         discussion = self.discussion_history_without_thinkings()
+        if not discussion:
+            return ""
+
         graph_prompt = (
             "Based only on the discussion history between players in a game of Mafia below, "
             "extract and list ALL explicit, clearly-stated *relationships* between players—such as direct suspicion, trust, voting, accusations, or alliance/support. "
             "DO NOT invent information, do NOT deduce, do NOT guess or imagine any relationships—list only those that are IMPLICITLY or EXPLICITLY PRESENT in the text. "
             "If there are no such relationships, output absolutely nothing (no lines, no explanations).\n\n"
             "Format: [SOURCE] -> [relation/action] -> [TARGET] (one edge per line).\n"
-            "Example:\n"
-            "Bailey -> suspects -> Riley\n"
-            "Morgan -> trusts -> Kai\n"
-            "Ellis -> votes for -> Riley\n\n"
             "Discussion history:\n"
             f"{discussion}\n"
             "\nList of relationship edges:"

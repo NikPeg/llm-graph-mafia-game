@@ -229,37 +229,37 @@ class MafiaGame:
 
     def discussion_graph_from_history(self):
         """
-        Генерирует граф отношений между игроками на основе последних сообщений (обсуждение дня).
+        Генерирует граф отношений между игроками на основе последних сообщений.
         Запрашивает LLM выделить явные связи: "X подозревает/доверяет Y" и т.д.
-        Возвращает строку-граф для промпта.
+        Возвращает строку-граф для промпта или пустую строку, если ничего нет.
         """
-        # Возьмём последние N сообщений
         discussion = self.discussion_history_without_thinkings()
-        # Можно ограничивать по длине, если нужно
-
-        # Составим промпт для LLM:
         graph_prompt = (
-            "Based on the discussion history below between players in a game of Mafia, "
-            "extract and list all explicit or clear implicit *relationships* (like suspicion, trust, accusations, support, voting intentions) "
-            "between players in the format: [SOURCE] -> [relation/action] -> [TARGET]. "
-            "Example output:\n"
+            "Based only on the discussion history between players in a game of Mafia below, "
+            "extract and list ALL explicit, clearly-stated *relationships* between players—such as direct suspicion, trust, voting, accusations, or alliance/support. "
+            "DO NOT invent information, do NOT deduce, do NOT guess or imagine any relationships—list only those that are IMPLICITLY or EXPLICITLY PRESENT in the text. "
+            "If there are no such relationships, output absolutely nothing (no lines, no explanations).\n\n"
+            "Format: [SOURCE] -> [relation/action] -> [TARGET] (one edge per line).\n"
+            "Example:\n"
             "Bailey -> suspects -> Riley\n"
             "Morgan -> trusts -> Kai\n"
-            "Ellis -> votes for -> Riley\n"
-            "Please analyze the following discussion and output such relationship edges explicitly (one per line):\n\n"
+            "Ellis -> votes for -> Riley\n\n"
+            "Discussion history:\n"
             f"{discussion}\n"
             "\nList of relationship edges:"
         )
 
-        # Используем одну и ту же модель, что и в игре (или любую другую, в зависимости от нужд)
-        # self.models[0] или актуальный model_name
         model_name = self.models[0]
         graph_text = get_llm_response(model_name, graph_prompt)
-
-        # Можно здесь обработать graph_text, например убрать пустые строки или лишние слова, если нужно...
-        # В простейшем случае — просто возвращаем, чтобы включить в промпт.
-
-        return graph_text.strip()
+        # Очищаем результат — только строки с шаблоном A -> B -> C
+        lines = [
+            line.strip()
+            for line in graph_text.splitlines()
+            if re.match(r"^\w+(?: \w+)*\s*->\s*\w+\s*->\s*\w+(?: \w+)*$", line.strip())
+        ]
+        result = "\n".join(lines).strip()
+        # Если нет ни одной валидной связи — вернем пусто
+        return result
 
     def execute_night_phase(self):
         """

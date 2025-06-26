@@ -20,12 +20,22 @@ OPENROUTER_API_KEY = os.getenv("OPENROUTER_API_KEY", "local_test_key")
 FIREBASE_CREDENTIALS_PATH = "firebase_credentials.json"
 
 # Модели - список строк Huggingface
-MODELS = os.getenv(
-    "MODELS",
-    "gryphe/mythomax-l2-13b,mistralai/mistral-small-24b-instruct-2501,deepseek/deepseek-llm-7b-chat,deepseek/deepseek-r1-distill-llama-70b,nousresearch/hermes-3-llama-3.1-70b,deepseek-ai/DeepSeek-R1-Distill-Qwen-32B"
-).split(",")
+AVAILABLE_MODELS = [
+    "gryphe/mythomax-l2-13b",
+    "mistralai/mistral-small-24b-instruct-2501",
+    "deepseek/deepseek-llm-7b-chat",
+    "deepseek/deepseek-r1-distill-llama-70b",
+    "nousresearch/hermes-3-llama-3.1-70b",
+    "deepseek-ai/DeepSeek-R1-Distill-Qwen-32B",
+]
 
-CLAUDE_3_7_SONNET = MODELS[0]
+# Модель по умолчанию
+DEFAULT_MODEL = AVAILABLE_MODELS[0]
+
+# Можно задать через переменную окружения, иначе дефолт
+MODEL_NAME = os.getenv("MODEL_NAME", DEFAULT_MODEL)
+
+CLAUDE_3_7_SONNET = MODEL_NAME
 
 # Game configuration
 NUM_GAMES = int(os.getenv("NUM_GAMES", 1))

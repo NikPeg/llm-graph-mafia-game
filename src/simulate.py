@@ -67,9 +67,7 @@ def run_simulation(
     }
 
     game_language = language if language is not None else config.LANGUAGE
-    model_to_use = model_name if model_name is not None else (
-        config.MODELS[0] if config.MODELS else None
-    )
+    model_to_use = model_name or config.DEFAULT_MODEL
 
     if not model_to_use:
         logger.error("No model specified in config.MODELS!")

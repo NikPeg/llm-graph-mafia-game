@@ -690,6 +690,10 @@ class MafiaGame:
                 self.mafia_players if player.role == Role.MAFIA else None,
                 discussion_context,
             )
+            if player.role == Role.VILLAGER:
+                self.logger.event(
+                    f"\n[VILLAGER PROMPT for {player.player_name}]:\n{prompt}\n", Color.CYAN
+                )
 
             # Получение и постобработка ответа
             response = player.get_response(prompt)

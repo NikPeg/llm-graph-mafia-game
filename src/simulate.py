@@ -22,7 +22,7 @@ def run_single_game(game_number, language=None, model_name=None):
         tuple: (game_number, winner, rounds_data, participants, game_id, language, critic_review)
     """
     game = MafiaGame(language=language)
-    winner, rounds_data, participants, language, critic_review = game.run_game()
+    winner, rounds_data, participants, language, critic_review = game.run_game(game_number)
     return (
         game_number,
         winner,

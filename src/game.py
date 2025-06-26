@@ -58,7 +58,7 @@ class MafiaGame:
         # Initialize logger
         self.logger = GameLogger()
 
-    def setup_game(self):
+    def setup_game(self, game_number=1):
         """
         Set up the game by assigning roles to players.
 
@@ -67,7 +67,7 @@ class MafiaGame:
         """
 
         # Log game start
-        self.logger.game_start(1, self.game_id, self.language)
+        self.logger.game_start(game_number, self.game_id, self.language)
 
         selected_models = random.choices(self.models, k=config.PLAYERS_PER_GAME)
 
@@ -823,7 +823,7 @@ class MafiaGame:
 
         return is_confirmed, confirmation_votes
 
-    def run_game(self):
+    def run_game(self, game_number = 1):
         """
         Run the Mafia game until completion.
 
@@ -834,7 +834,7 @@ class MafiaGame:
                    language is the language used for the game.
         """
         # Setup game
-        if not self.setup_game():
+        if not self.setup_game(game_number):
             return None, [], {}, self.language
 
         # Game loop

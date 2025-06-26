@@ -678,7 +678,7 @@ class MafiaGame:
                 game_state += reminder
 
             if player.role != Role.MAFIA:
-                discussion_context = self.discussion_graph_from_history()
+                discussion_context = f"{self.discussion_graph_from_history()}\n{self.discussion_history_without_thinkings()}"
             else:
                 discussion_context = self.discussion_history_without_thinkings()
 

@@ -39,6 +39,7 @@ MAX_ROUNDS = int(os.getenv("MAX_ROUNDS", 20))
 API_TIMEOUT = int(os.getenv("API_TIMEOUT", 60))
 MAX_OUTPUT_TOKENS = int(os.getenv("MAX_OUTPUT_TOKENS", 300))
 MAX_MSG = int(os.getenv("MAX_MSG", 400))
+DISCUSSION_HISTORY_LIMIT = int(os.getenv("DISCUSSION_HISTORY_LIMIT", 10))
 
 MODEL_CONFIGS = {
     "gryphe/mythomax-l2-13b": {"timeout": 60},

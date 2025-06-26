@@ -196,27 +196,36 @@ class MafiaGame:
 
     def discussion_history_without_thinkings(self):
         """
-        Get the discussion history for the current round, excluding thinking messages.
+        Get the limited discussion history for the current round, excluding thinking messages.
         Removes any <think></think> or <THINK></THINK> tags and their contents.
-        If a closing tag is missing, removes everything from the opening tag to the end of the string.
+        Shows only the N (config.DISCUSSION_HISTORY_LIMIT) latest messages.
         """
-        # First handle properly closed tags (both lowercase and uppercase)
-        discussion_history_without_thinkings = re.sub(
-            r"<[tT][hH][iI][nN][kK]>.*?</[tT][hH][iI][nN][kK]>",
+
+        # Удаляем think-теги из всей истории
+        discussion_history = re.sub(
+            r"&lt;[tT][hH][iI][nN][kK]&gt;.*?&lt;/[tT][hH][iI][nN][kK]&gt;",
             "",
             self.discussion_history,
             flags=re.DOTALL,
         )
-
-        # Then handle any unclosed tags - remove from opening tag to the end of the string
-        discussion_history_without_thinkings = re.sub(
-            r"<[tT][hH][iI][nN][kK]>.*$",
+        discussion_history = re.sub(
+            r"&lt;[tT][hH][iI][nN][kK]&gt;.*$",
             "",
-            discussion_history_without_thinkings,
+            discussion_history,
             flags=re.DOTALL,
         )
 
-        return discussion_history_without_thinkings
+        # Разбиваем историю на сообщения по двоему переводу строк (каждое сообщение — отделено двумя \n)
+        # Можно еще .strip() убрать пустые строки по краям
+        entries = [entry for entry in discussion_history.strip().split('\n\n') if entry.strip()]
+        limit = config.DISCUSSION_HISTORY_LIMIT
+
+        # Оставляем только последние N сообщений
+        if len(entries) > limit:
+            entries = entries[-limit:]
+
+        # Собираем обратно с двумя переводами строк
+        return '\n\n'.join(entries).strip()
 
     def execute_night_phase(self):
         """

@@ -620,29 +620,12 @@ class MafiaGame:
             ):
                 continue
 
-            self.logger.player_response(
-                player.player_name, player.role.value, sanitized, player.player_name
-            )
-
-            msg_data = {
-                "speaker": player.player_name,
-                "content": sanitized,
-                "phase": phase_type,
-                "role": player.role.value,
-                "player_name": player.player_name,
-            }
-            messages.append(
-                {
-                    "speaker": player.player_name,
-                    "content": sanitized,
-                    "player_name": player.player_name,
-                }
-            )
-            self.current_round_data["messages"].append(msg_data)
-
+            # Сначала обрабатываем голосование, чтобы знать, нужно ли добавлять автоматический голос
+            auto_vote_added = False
+            final_content = sanitized
+            
             if collect_votes and votes is not None:
                 vote_target = player.parse_day_vote(sanitized, alive_players)
-                auto_vote_added = False
 
                 if (
                     (not vote_target)
@@ -659,9 +642,9 @@ class MafiaGame:
                         auto_text = f"(auto-selected)"
                         auto_vote_added = True
                         
-                        # Добавляем автоматический голос в историю сообщений
+                        # Добавляем автоматический голос к контенту
                         vote_message = f"VOTE: {vote_target.player_name}"
-                        updated_sanitized = f"{sanitized}\n\n{vote_message}"
+                        final_content = f"{sanitized}\n\n{vote_message}"
                         
                         self.logger.player_action(
                             player.player_name,
@@ -674,6 +657,29 @@ class MafiaGame:
                         )
                     else:
                         vote_target = None
+
+            # Теперь логируем с финальным контентом (включая автоматический голос если он был добавлен)
+            self.logger.player_response(
+                player.player_name, player.role.value, final_content, player.player_name
+            )
+
+            msg_data = {
+                "speaker": player.player_name,
+                "content": final_content,
+                "phase": phase_type,
+                "role": player.role.value,
+                "player_name": player.player_name,
+            }
+            messages.append(
+                {
+                    "speaker": player.player_name,
+                    "content": final_content,
+                    "player_name": player.player_name,
+                }
+            )
+            self.current_round_data["messages"].append(msg_data)
+
+            if collect_votes and votes is not None:
                         
                 if vote_target:
                     votes[player.player_name] = vote_target.player_name
@@ -701,11 +707,8 @@ class MafiaGame:
                         "Invalid vote"
                     )
 
-            # Добавляем в историю обсуждений (с автоматическим голосом если он был добавлен)
-            if collect_votes and auto_vote_added and vote_target:
-                self.discussion_history += f"{player.player_name}: {sanitized}\n\nVOTE: {vote_target.player_name}\n\n"
-            else:
-                self.discussion_history += f"{player.player_name}: {sanitized}\n\n"
+            # Добавляем в историю обсуждений финальный контент
+            self.discussion_history += f"{player.player_name}: {final_content}\n\n"
 
     def get_last_words(self, player, vote_count):
         """

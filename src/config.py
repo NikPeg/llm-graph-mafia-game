@@ -18,6 +18,7 @@ OPENROUTER_API_KEY = os.getenv("OPENROUTER_API_KEY", "local_test_key")
 
 FIREBASE_CREDENTIALS_PATH = "firebase_credentials.json"
 
+# Available models for reference
 AVAILABLE_MODELS = [
     "gryphe/mythomax-l2-13b",
     "mistralai/mistral-small-24b-instruct-2501",
@@ -27,10 +28,13 @@ AVAILABLE_MODELS = [
     "deepseek-ai/DeepSeek-R1-Distill-Qwen-32B",
 ]
 
-DEFAULT_MODEL = AVAILABLE_MODELS[0]
+# Default model (first in the list)
+DEFAULT_MODEL = "gryphe/mythomax-l2-13b"
 
+# Model to use for the game (set via environment variable)
 MODEL_NAME = os.getenv("MODEL_NAME", DEFAULT_MODEL)
 
+# Legacy alias for compatibility
 CLAUDE_3_7_SONNET = MODEL_NAME
 
 NUM_GAMES = int(os.getenv("NUM_GAMES", 1))

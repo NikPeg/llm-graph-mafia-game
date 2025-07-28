@@ -297,3 +297,94 @@ class FirebaseManager:
         except Exception as e:
             print(f"Error getting game log: {e}")
             return None
+
+    def clear_all_data(self, confirm=False):
+        """
+        Clear all game data from Firebase collections.
+        
+        Args:
+            confirm (bool): Must be True to actually delete data (safety check)
+            
+        Returns:
+            bool: True if successful, False otherwise
+        """
+        if not self.initialized:
+            print("Firebase not initialized. Cannot clear data.")
+            return False
+            
+        if not confirm:
+            print("WARNING: This will delete ALL game data from Firebase!")
+            print("To confirm, call this method with confirm=True")
+            return False
+            
+        try:
+            print("Clearing all data from Firebase...")
+            
+            # Delete all documents from mafia_games collection
+            games_ref = self.db.collection("mafia_games")
+            games_docs = games_ref.stream()
+            games_count = 0
+            
+            for doc in games_docs:
+                doc.reference.delete()
+                games_count += 1
+                
+            print(f"Deleted {games_count} game results")
+            
+            # Delete all documents from game_logs collection
+            logs_ref = self.db.collection("game_logs")
+            logs_docs = logs_ref.stream()
+            logs_count = 0
+            
+            for doc in logs_docs:
+                doc.reference.delete()
+                logs_count += 1
+                
+            print(f"Deleted {logs_count} game logs")
+            print(f"Total deleted: {games_count + logs_count} documents")
+            print("Firebase data cleared successfully!")
+            
+            return True
+            
+        except Exception as e:
+            print(f"Error clearing Firebase data: {e}")
+            return False
+
+    def get_data_summary(self):
+        """
+        Get a summary of data in Firebase collections.
+        
+        Returns:
+            dict: Summary of data counts
+        """
+        if not self.initialized:
+            print("Firebase not initialized. Cannot get data summary.")
+            return {}
+            
+        try:
+            # Count documents in mafia_games collection
+            games_ref = self.db.collection("mafia_games")
+            games_docs = list(games_ref.stream())
+            games_count = len(games_docs)
+            
+            # Count documents in game_logs collection
+            logs_ref = self.db.collection("game_logs")
+            logs_docs = list(logs_ref.stream())
+            logs_count = len(logs_docs)
+            
+            summary = {
+                "mafia_games": games_count,
+                "game_logs": logs_count,
+                "total_documents": games_count + logs_count
+            }
+            
+            print(f"Firebase Data Summary:")
+            print(f"  Game Results: {games_count}")
+            print(f"  Game Logs: {logs_count}")
+            print(f"  Total Documents: {games_count + logs_count}")
+            
+            return summary
+            
+        except Exception as e:
+            print(f"Error getting data summary: {e}")
+            return {}

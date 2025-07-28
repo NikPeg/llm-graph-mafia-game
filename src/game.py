@@ -12,6 +12,7 @@ import re
 import json
 from openrouter import get_llm_response
 from parsing import sanitize_model_response
+from rag_providers import RAGManager
 
 
 class MafiaGame:
@@ -52,6 +53,7 @@ class MafiaGame:
             random.seed(config.RANDOM_SEED)
 
         self.logger = GameLogger(game_id=self.game_id)
+        self.rag_manager = RAGManager()
 
     def setup_game(self, game_number=1):
         """
@@ -206,34 +208,46 @@ class MafiaGame:
     def discussion_graph_from_history(self):
         """
         Генерирует граф отношений между игроками на основе последних сообщений.
-        Запрашивает LLM выделить явные связи: "X подозревает/доверяет Y" и т.д.
-        Возвращает строку-граф для промпта или пустую строку, если ничего нет.
+        Теперь использует новую RAG архитектуру для совместимости.
         """
-        discussion = self.discussion_history_without_thinkings()
-        if not discussion:
-            return ""
+        # Используем новую RAG архитектуру
+        discussion_rag = self.rag_manager.providers["discussion_graph"]
+        game_state = self.get_rag_game_state()
+        context = discussion_rag.generate_context(game_state)
+        
+        # Извлекаем только граф без заголовка для обратной совместимости
+        if context and "--- Discussion Relationship Graph ---" in context:
+            lines = context.split("\n")
+            graph_lines = []
+            in_graph = False
+            for line in lines:
+                if "--- Discussion Relationship Graph ---" in line:
+                    in_graph = True
+                    continue
+                elif line.strip() == "" and in_graph:
+                    break
+                elif in_graph:
+                    graph_lines.append(line)
+            return "\n".join(graph_lines).strip()
+        
+        return ""
 
-        graph_prompt = (
-            "Based only on the discussion history between players in a game of Mafia below, "
-            "extract and list ALL explicit, clearly-stated *relationships* between players—such as direct suspicion, trust, voting, accusations, or alliance/support. "
-            "DO NOT invent information, do NOT deduce, do NOT guess or imagine any relationships—list only those that are IMPLICITLY or EXPLICITLY PRESENT in the text. "
-            "Format: [SOURCE] -> [relation/action] -> [TARGET] (one edge per line).\n"
-            "Discussion history:\n"
-            f"{discussion}\n"
-            "\nList of relationship edges:"
-        )
-
-        model_name = self.models[0]
-        graph_text = get_llm_response(model_name, graph_prompt)
-
-        lines = [
-            line.strip()
-            for line in graph_text.splitlines()
-            if re.match(r"^\w+(?: \w+)*\s*->\s*\w+\s*->\s*\w+(?: \w+)*$", line.strip())
-        ]
-        result = "\n".join(lines).strip()
-
-        return result
+    def get_rag_game_state(self):
+        """
+        Get game state information for RAG providers.
+        
+        Returns:
+            dict: Game state data for RAG context generation
+        """
+        return {
+            "discussion_history": self.discussion_history_without_thinkings(),
+            "rounds_data": self.rounds_data,
+            "current_round_data": self.current_round_data,
+            "alive_players": self.get_alive_players(),
+            "models": self.models,
+            "round_number": self.round_number,
+            "phase": self.phase
+        }
 
     def execute_night_phase(self):
         """
@@ -252,11 +266,22 @@ class MafiaGame:
         for player in self.mafia_players:
             if player.alive:
                 game_state = f"{self.get_game_state()} It's night time (Round {self.round_number}). As the Mafia, you MUST choose exactly one player to kill tonight. You cannot skip this action. End your response with ACTION: Kill [player]."
+                
+                # Получаем RAG контекст для мафии
+                rag_context = self.rag_manager.generate_rag_context(
+                    self.get_rag_game_state(),
+                    player.role.value
+                )
+                
+                enhanced_discussion = self.discussion_history_without_thinkings()
+                if rag_context:
+                    enhanced_discussion = rag_context + enhanced_discussion
+                
                 prompt = player.generate_prompt(
                     game_state,
                     alive_players,
                     self.mafia_players,
-                    self.discussion_history_without_thinkings(),
+                    enhanced_discussion,
                 )
 
                 response = player.get_response(prompt)
@@ -329,11 +354,22 @@ class MafiaGame:
         if self.doctor_player and self.doctor_player.alive:
             instruction = f"It's night time (Round {self.round_number}). As the Doctor, you MUST choose exactly one player to protect from the Mafia tonight. You cannot skip this action. End your response with ACTION: Protect [player]."
             game_state = f"{self.get_game_state()} {instruction}"
+            
+            # Получаем RAG контекст для доктора
+            rag_context = self.rag_manager.generate_rag_context(
+                self.get_rag_game_state(),
+                self.doctor_player.role.value
+            )
+            
+            enhanced_discussion = self.discussion_history_without_thinkings()
+            if rag_context:
+                enhanced_discussion = rag_context + enhanced_discussion
+            
             prompt = self.doctor_player.generate_prompt(
                 game_state,
                 alive_players,
                 None,
-                self.discussion_history_without_thinkings(),
+                enhanced_discussion,
             )
 
             response = self.doctor_player.get_response(prompt)
@@ -585,20 +621,27 @@ class MafiaGame:
                 )
                 game_state += reminder
 
-            # graph = self.discussion_graph_from_history()
-            # if graph.strip() and config.GRAPH_DEBUG:
-            #     self.logger.log(
-            #         f"\n[VILLAGER GRAPH for {player.player_name}]:\n{graph}", Color.CYAN
-            #     )
-            # discussion_context = (
-            #     f"{graph}\n{self.discussion_history_without_thinkings()}"
-            # )
+            # Получаем RAG контекст для игрока
+            rag_context = self.rag_manager.generate_rag_context(
+                self.get_rag_game_state(),
+                player.role.value
+            )
+            
+            # Комбинируем обычную историю обсуждений с RAG контекстом
+            enhanced_discussion = self.discussion_history_without_thinkings()
+            if rag_context:
+                enhanced_discussion = rag_context + enhanced_discussion
+                
+                if config.GRAPH_DEBUG:
+                    self.logger.log(
+                        f"\n[RAG CONTEXT for {player.player_name}]:\n{rag_context}", Color.CYAN
+                    )
 
             prompt = player.generate_prompt(
                 game_state,
                 alive_players,
                 self.mafia_players if player.role == Role.MAFIA else None,
-                self.discussion_history_without_thinkings(),
+                enhanced_discussion,
             )
 
             response = player.get_response(prompt)
@@ -732,11 +775,22 @@ class MafiaGame:
         )
 
         game_state = f"{self.get_game_state()} You have been voted out with {vote_count} votes and will be eliminated. Share your final thoughts before leaving the game."
+        
+        # Получаем RAG контекст для последних слов
+        rag_context = self.rag_manager.generate_rag_context(
+            self.get_rag_game_state(),
+            player.role.value
+        )
+        
+        enhanced_discussion = self.discussion_history_without_thinkings()
+        if rag_context:
+            enhanced_discussion = rag_context + enhanced_discussion
+        
         prompt = player.generate_prompt(
             game_state,
             self.get_alive_players(),
             self.mafia_players if player.role == Role.MAFIA else None,
-            self.discussion_history_without_thinkings(),
+            enhanced_discussion,
         )
 
         response = player.get_response(prompt)

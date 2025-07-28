@@ -49,6 +49,11 @@ MAX_MSG = int(os.getenv("MAX_MSG", 400))
 DISCUSSION_HISTORY_LIMIT = int(os.getenv("DISCUSSION_HISTORY_LIMIT", 10))
 GRAPH_DEBUG = bool(os.getenv("GRAPH_DEBUG", True))
 
+# RAG (Retrieval-Augmented Generation) settings
+RAG_TYPES = os.getenv("RAG_TYPES", "discussion_graph").split(",")  # discussion_graph, history_graph, current_round_graph, communication_graph, auto_summaries, analytical_hints
+RAG_TARGET = os.getenv("RAG_TARGET", "all")  # all, mafia, villagers
+RAG_ENABLED = os.getenv("RAG_ENABLED", "true").lower() == "true"
+
 MODEL_CONFIGS = {
     "gryphe/mythomax-l2-13b": {"timeout": 60},
     "mistralai/mistral-small-24b-instruct-2501": {"timeout": 75},

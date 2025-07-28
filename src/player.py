@@ -219,14 +219,8 @@ class Player:
             # Берем последний голос (самый актуальный)
             target_name_raw = matches[-1].strip().rstrip(".:,;!? \t")
             
-            # Проверяем на "None" или "No one"
-            if target_name_raw.lower() in ["none", "no one", "nobody", "skip"]:
-                # Создаем специальный объект для обозначения "не голосовать"
-                class NoVote:
-                    def __init__(self):
-                        self.player_name = "None"
-                        self.alive = True
-                return NoVote()
+            # Удаляем обработку "None" - теперь это будет считаться как отсутствие голоса
+            # и система автоматически добавит случайный голос
 
             # Попробуем найти точное совпадение
             for p in all_players:

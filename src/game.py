@@ -696,22 +696,27 @@ class MafiaGame:
             if collect_votes and votes is not None:
                 vote_target = player.parse_day_vote(sanitized, alive_players)
 
-                # Проверяем на специальный случай "None" голоса
-                if vote_target and hasattr(vote_target, 'player_name') and vote_target.player_name == "None":
-                    # Игрок решил не голосовать
+                # Проверяем на неправильное голосование (за себя или выбывшего игрока)
+                if (
+                    vote_target and hasattr(vote_target, 'player_name') and vote_target.player_name == player.player_name
+                ) or (
+                    vote_target and hasattr(vote_target, 'alive') and not vote_target.alive
+                ):
+                    # Неправильное голосование - ставим VOTE: None
                     self.logger.player_action(
                         player.player_name,
                         player.role.value,
-                        "Vote None (abstain)",
+                        "Vote None (invalid vote)",
                         player.player_name,
                     )
-                    self.current_round_data["actions"][player.player_name] = "Vote None (abstain)"
+                    self.current_round_data["actions"][player.player_name] = "Vote None (invalid vote)"
+                    
+                    # Добавляем VOTE: None в лог и историю
+                    vote_message = "VOTE: None"
+                    final_content = f"{sanitized} {vote_message}"
                     vote_target = None  # Не добавляем в голоса
-                elif (
-                    (not vote_target)
-                    or (hasattr(vote_target, 'player_name') and vote_target.player_name == player.player_name)
-                    or (hasattr(vote_target, 'alive') and not vote_target.alive)
-                ):
+                elif not vote_target:
+                    # Игрок не проголосовал - добавляем случайный голос
                     possible_targets = [
                         p for p in alive_players if p.player_name != player.player_name
                     ]
@@ -919,9 +924,23 @@ class MafiaGame:
 
         participants = {}
         for player in self.players:
+            # Определяем RAG информацию для игрока
+            model_display_name = player.model_name
+            if config.RAG_ENABLED:
+                # Получаем полное название RAG типа (на случай если config.RAG_TYPE короткое)
+                rag_type = config.RAG_TYPE.strip()
+                if rag_type.upper() in [short for short in self.rag_manager.short_names.values()]:
+                    rag_type = self.rag_manager.get_full_name_from_short(rag_type)
+                
+                provider = self.rag_manager.providers.get(rag_type)
+                if provider and provider.is_applicable_for_player(player.role.value, config.RAG_TARGET):
+                    rag_short_name = self.rag_manager.get_short_name(rag_type)
+                    model_display_name = f"{player.model_name}-{rag_short_name}"
+            
             participants[player.player_name] = {
                 "role": player.role.value,
-                "model_name": player.model_name,
+                "model_name": player.model_name,  # Оригинальное название модели
+                "model_display_name": model_display_name,  # Название с RAG для отображения
                 "player_name": player.player_name,
                 "survived": player.alive,
             }

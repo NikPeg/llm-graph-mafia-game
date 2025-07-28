@@ -202,7 +202,8 @@
                             let role, modelName;
                             if (typeof roleData === 'object') {
                                 role = roleData.role;
-                                modelName = roleData.model_name;
+                                // Используем model_display_name если доступно, иначе model_name
+                                modelName = roleData.model_display_name || roleData.model_name;
                             } else {
                                 // Legacy format where roleData is just the role string
                                 role = roleData;

@@ -642,6 +642,7 @@ class MafiaGame:
 
             if collect_votes and votes is not None:
                 vote_target = player.parse_day_vote(sanitized, alive_players)
+                auto_vote_added = False
 
                 if (
                     (not vote_target)
@@ -656,6 +657,12 @@ class MafiaGame:
 
                         vote_target = random.choice(possible_targets)
                         auto_text = f"(auto-selected)"
+                        auto_vote_added = True
+                        
+                        # Добавляем автоматический голос в историю сообщений
+                        vote_message = f"VOTE: {vote_target.player_name}"
+                        updated_sanitized = f"{sanitized}\n\n{vote_message}"
+                        
                         self.logger.player_action(
                             player.player_name,
                             player.role.value,
@@ -667,6 +674,7 @@ class MafiaGame:
                         )
                     else:
                         vote_target = None
+                        
                 if vote_target:
                     votes[player.player_name] = vote_target.player_name
                     if "actions" not in self.current_round_data:
@@ -693,7 +701,11 @@ class MafiaGame:
                         "Invalid vote"
                     )
 
-            self.discussion_history += f"{player.player_name}: {sanitized}\n\n"
+            # Добавляем в историю обсуждений (с автоматическим голосом если он был добавлен)
+            if collect_votes and auto_vote_added and vote_target:
+                self.discussion_history += f"{player.player_name}: {sanitized}\n\nVOTE: {vote_target.player_name}\n\n"
+            else:
+                self.discussion_history += f"{player.player_name}: {sanitized}\n\n"
 
     def get_last_words(self, player, vote_count):
         """

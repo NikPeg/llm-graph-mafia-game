@@ -45,6 +45,27 @@ python3 src/simulate.py
     - Или переменной окружения `MODEL_NAME`
     - Или прямо в `config.py`
 
+#### RAG (Retrieval-Augmented Generation) настройки
+
+Проект поддерживает различные типы RAG для улучшения игровых стратегий. Настройки через переменные окружения:
+
+- `RAG_ENABLED=true/false` — включение/выключение RAG
+- `RAG_TYPE` — тип RAG (можно использовать короткие названия):
+  - `DG` — Discussion Graph (граф отношений из обсуждений)
+  - `HG` — History Graph (граф из полной истории игры)
+  - `CRG` — Current Round Graph (граф текущего раунда)
+  - `CG` — Communication Graph (анализ паттернов коммуникации)
+  - `AS` — Auto Summaries (автоматические саммари событий)
+  - `AH` — Analytical Hints (аналитические подсказки по игрокам)
+- `RAG_TARGET=all/mafia/villagers` — кому применять RAG
+
+**Пример .env:**
+```bash
+RAG_ENABLED=true
+RAG_TYPE=DG
+RAG_TARGET=all
+```
+
 ---
 
 ### 4. Логи и вывод

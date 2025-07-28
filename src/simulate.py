@@ -48,6 +48,36 @@ def run_simulation(
 ):
     logger = GameLogger(game_id="SIMULATION")
     logger.header(f"STARTING SIMULATION WITH {num_games} GAMES", Color.BRIGHT_MAGENTA)
+    
+    # Выводим условия игры с RAG
+    if config.RAG_ENABLED:
+        from rag_providers import RAGManager
+        rag_manager = RAGManager()
+        rag_full_name = {
+            "discussion_graph": "Discussion Graph",
+            "history_graph": "History Graph",
+            "current_round_graph": "Current Round Graph",
+            "communication_graph": "Communication Graph",
+            "auto_summaries": "Auto Summaries",
+            "analytical_hints": "Analytical Hints"
+        }.get(config.RAG_TYPE, config.RAG_TYPE)
+        
+        rag_short_name = rag_manager.get_short_name(config.RAG_TYPE)
+        
+        if config.RAG_TARGET == "all":
+            target_desc = "All players"
+        elif config.RAG_TARGET == "mafia":
+            target_desc = "Mafia team"
+        elif config.RAG_TARGET == "villagers":
+            target_desc = "Villagers team"
+        else:
+            target_desc = config.RAG_TARGET
+            
+        logger.print(f"Game Conditions: {target_desc} playing with {rag_full_name} ({rag_short_name})", Color.BRIGHT_CYAN, bold=True)
+    else:
+        logger.print("Game Conditions: No RAG enhancement", Color.BRIGHT_CYAN, bold=True)
+    
+    logger.print("")
     start_time = time.time()
 
     firebase = FirebaseManager()

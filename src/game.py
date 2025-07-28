@@ -103,8 +103,16 @@ class MafiaGame:
             else:
                 self.villager_players.append(player)
 
+            # Определяем RAG информацию для игрока
+            rag_info = ""
+            if config.RAG_ENABLED:
+                provider = self.rag_manager.providers.get(config.RAG_TYPE)
+                if provider and provider.is_applicable_for_player(player.role.value, config.RAG_TARGET):
+                    rag_short_name = self.rag_manager.get_short_name(config.RAG_TYPE)
+                    rag_info = f" (RAG: {rag_short_name})"
+            
             self.logger.player_setup(
-                player.model_name, player.role.value, player.player_name
+                player.model_name, player.role.value, player.player_name, rag_info
             )
 
         self.phase = "night"

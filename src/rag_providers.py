@@ -404,6 +404,13 @@ class RAGManager:
         """Получить короткое название RAG типа."""
         return self.short_names.get(rag_type, rag_type.upper())
     
+    def get_full_name_from_short(self, short_name: str) -> str:
+        """Получить полное название RAG типа по короткому."""
+        for full_name, short in self.short_names.items():
+            if short == short_name.upper():
+                return full_name
+        return short_name.lower()
+    
     def generate_rag_context(self, game_state: Dict[str, Any], player_role: str) -> str:
         """
         Generate RAG context for a specific player based on configuration.
@@ -419,6 +426,11 @@ class RAGManager:
             return ""
         
         rag_type = config.RAG_TYPE.strip()
+        
+        # Проверяем, не является ли RAG_TYPE коротким названием
+        if rag_type.upper() in [short for short in self.short_names.values()]:
+            rag_type = self.get_full_name_from_short(rag_type)
+        
         if rag_type in self.providers:
             provider = self.providers[rag_type]
             

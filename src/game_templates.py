@@ -15,7 +15,6 @@ class Role(Enum):
     DOCTOR = "Doctor"
 
 
-# Constants for game rules by language
 GAME_RULES = {
     "English": """
 GAME RULES:
@@ -51,7 +50,6 @@ RÈGLES DU JEU:
 """,
 }
 
-# Constants for confirmation vote explanations
 CONFIRMATION_VOTE_EXPLANATIONS = {
     "English": """
 ABOUT CONFIRMATION VOTES:
@@ -79,7 +77,6 @@ SOBRE LOS VOTOS DE CONFIRMACIÓN:
 """,
 }
 
-# Constants for prompt templates
 PROMPT_TEMPLATES = {
     "English": {
         Role.MAFIA: """
@@ -343,7 +340,6 @@ Votre réponse:
     },
 }
 
-# Constants for confirmation vote templates
 CONFIRMATION_VOTE_TEMPLATES = {
     "English": """
 You are {model_name}, playing a Mafia game. The town has voted to eliminate {player_to_eliminate}.
@@ -407,7 +403,6 @@ Votre réponse:
 """,
 }
 
-# Constants for thinking tags
 THINKING_TAGS = {
     "English": f"IMPORTANT: You can use <think>your private thoughts here</think> tags to reason privately. \nOther players will NOT see anything inside these tags. Use this to plan your strategy.\nYour response is limited to {config.MAX_OUTPUT_TOKENS} tokens maximum. Be concise and focused.",
     "Spanish": f"IMPORTANTE: Puedes usar etiquetas <think>tus pensamientos privados aquí</think> para razonar en privado.\nLos otros jugadores NO verán nada dentro de estas etiquetas. Úsalas para planificar tu estrategia.\nTu respuesta está limitada a un máximo de {config.MAX_OUTPUT_TOKENS} tokens. Sé conciso y enfocado.",
@@ -415,7 +410,6 @@ THINKING_TAGS = {
     "Korean": f"IMPORTANT: 당신은 <think>당신의 개인적인 생각을 여기에 적으세요</think> 태그를 사용하여 개인적으로 생각할 수 있습니다.\n다른 플레이어는 이 태그 안에 있는 것을 볼 수 없습니다. 이를 사용하여 전략을 계획하세요.\n당신의 응답은 최대 {config.MAX_OUTPUT_TOKENS} 토큰으로 제한됩니다. 간결하고 집중적으로 작성하세요.",
 }
 
-# Constants for action patterns
 ACTION_PATTERNS = {
     "English": {
         Role.MAFIA: r"ACTION:\s*Kill\s+([A-Za-z][-A-Za-z]*)",
@@ -435,7 +429,6 @@ ACTION_PATTERNS = {
     },
 }
 
-# Constants for vote patterns
 VOTE_PATTERNS = {
     "English": r"VOTE:\s*([\w./-]+(?:[-:]\w+)*)",
     "Spanish": r"VOTO:\s*([\w./-]+(?:[-:]\w+)*)",
@@ -443,7 +436,6 @@ VOTE_PATTERNS = {
     "Korean": r"투표:\s*([\w./-]+(?:[-:]\w+)*)",
 }
 
-# Constants for confirmation vote patterns
 CONFIRMATION_VOTE_PATTERNS = {
     "English": {
         "agree": r"\b(agree|yes|confirm|approve)\b",

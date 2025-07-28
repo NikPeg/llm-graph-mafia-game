@@ -11,7 +11,7 @@ from typing import Dict, List, Any, Optional, Union
 from dataclasses import dataclass, asdict
 import matplotlib
 
-matplotlib.use("Agg")  # Use Agg backend for non-interactive mode
+matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 import numpy as np
 from flask import Flask, render_template, request, jsonify, Response, make_response
@@ -21,15 +21,13 @@ from flask_caching import Cache
 app = Flask(__name__, static_folder="static", template_folder="templates")
 firebase = FirebaseManager()
 
-# Configure Flask-Caching
 cache_config = {
-    "CACHE_TYPE": "SimpleCache",  # Simple in-memory cache
-    "CACHE_DEFAULT_TIMEOUT": 30,  # Default timeout in seconds
+    "CACHE_TYPE": "SimpleCache",
+    "CACHE_DEFAULT_TIMEOUT": 30,
 }
 cache = Cache(app, config=cache_config)
 
 
-# Add template filter for formatting timestamps
 @app.template_filter("strftime")
 def _jinja2_filter_strftime(timestamp):
     """Convert a Unix timestamp to a formatted datetime string."""
@@ -40,7 +38,6 @@ def _jinja2_filter_strftime(timestamp):
         return "Invalid timestamp"
 
 
-# Data models for type safety and validation
 @dataclass
 class ModelStats:
     games_played: int
@@ -86,10 +83,9 @@ def index():
 @app.route("/game/<game_id>")
 def game_detail(game_id):
     """Render the game detail page."""
-    # Get game data to pass to the template
+
     game_data = firebase.get_game_log(game_id)
 
-    # If game data not found, return 404
     if not game_data:
         return render_template("404.html", message="Game not found"), 404
 
@@ -101,10 +97,9 @@ def get_stats():
     """Get statistics from Firebase."""
     stats = get_cached_model_stats()
 
-    # Set cache control headers for better performance
     response = make_response(jsonify(stats))
     response.headers["Content-Type"] = "application/json"
-    response.headers["Cache-Control"] = "max-age=60"  # Cache for 60 seconds
+    response.headers["Cache-Control"] = "max-age=60"
 
     return response
 
@@ -127,16 +122,14 @@ def get_games():
 
         games = get_cached_game_results(limit)
 
-        # Validate timestamp format
         for game in games:
             if "timestamp" in game and isinstance(game["timestamp"], int):
-                # Ensure timestamp is in seconds, not milliseconds
-                if game["timestamp"] > 10000000000:  # If in milliseconds
+                if game["timestamp"] > 10000000000:
                     game["timestamp"] = game["timestamp"] // 1000
 
         response = make_response(jsonify(games))
         response.headers["Content-Type"] = "application/json"
-        response.headers["Cache-Control"] = "max-age=10"  # Cache for 10 seconds
+        response.headers["Cache-Control"] = "max-age=10"
 
         return response
     except Exception as e:
@@ -164,10 +157,9 @@ def get_game(game_id):
     if not game_data:
         return jsonify({"error": "Game not found"}), 404
 
-    # Set cache control headers for better performance
     response = make_response(jsonify(game_data))
     response.headers["Content-Type"] = "application/json"
-    response.headers["Cache-Control"] = "max-age=120"  # Cache for 120 seconds
+    response.headers["Cache-Control"] = "max-age=120"
 
     return response
 
@@ -194,12 +186,10 @@ def get_win_rate_chart():
         if not stats:
             return make_response(jsonify({"error": "No data available"}), 404)
 
-        # Sort models by overall win rate
         sorted_models = sorted(
             stats.items(), key=lambda x: x[1]["win_rate"], reverse=True
         )
 
-        # Extract data for chart
         models = [model for model, _ in sorted_models]
         win_rates = [stats[model]["win_rate"] * 100 for model in models]
         mafia_win_rates = [stats[model]["mafia_win_rate"] * 100 for model in models]
@@ -208,71 +198,56 @@ def get_win_rate_chart():
         ]
         doctor_win_rates = [stats[model]["doctor_win_rate"] * 100 for model in models]
 
-        # Create chart with explicit figure and axes
         fig, ax = plt.subplots(figsize=(12, 8))
-        fig.set_facecolor("white")  # Set white background
-        ax.set_facecolor("white")  # Set white background for plot area
+        fig.set_facecolor("white")
+        ax.set_facecolor("white")
 
-        # Set width of bars
         bar_width = 0.2
 
-        # Set position of bars on x axis
         r1 = np.arange(len(models))
         r2 = [x + bar_width for x in r1]
         r3 = [x + bar_width for x in r2]
         r4 = [x + bar_width for x in r3]
 
-        # Create bars
         ax.bar(r1, win_rates, width=bar_width, label="Overall", color="blue")
         ax.bar(r2, mafia_win_rates, width=bar_width, label="Mafia", color="red")
         ax.bar(r3, villager_win_rates, width=bar_width, label="Villager", color="green")
         ax.bar(r4, doctor_win_rates, width=bar_width, label="Doctor", color="purple")
 
-        # Add labels and title
         ax.set_xlabel("Models", fontsize=12, fontweight="bold")
         ax.set_ylabel("Win Rate (%)", fontsize=12, fontweight="bold")
         ax.set_title("Win Rates by Model and Role", fontsize=14, fontweight="bold")
 
-        # Ensure axes are visible
         ax.spines["top"].set_visible(True)
         ax.spines["right"].set_visible(True)
         ax.spines["bottom"].set_visible(True)
         ax.spines["left"].set_visible(True)
 
-        # Set tick parameters to ensure visibility
         ax.tick_params(axis="both", which="major", labelsize=10, width=1, length=5)
         ax.tick_params(axis="both", which="minor", width=1, length=3)
 
-        # Set x-ticks
         ax.set_xticks([r + bar_width * 1.5 for r in range(len(models))])
         ax.set_xticklabels(
             [model.split("/")[-1] for model in models], rotation=45, ha="right"
         )
 
-        # Add grid for better readability
         ax.grid(axis="y", linestyle="--", alpha=0.7)
 
-        # Add legend
         ax.legend(fontsize=10)
 
-        # Adjust layout
         plt.tight_layout()
 
-        # Save chart to memory with optimized settings
         img = io.BytesIO()
         plt.savefig(img, format="png", dpi=120, bbox_inches="tight", pad_inches=0.2)
         img.seek(0)
 
-        # Encode chart as base64
         chart_url = base64.b64encode(img.getvalue()).decode()
 
-        # Close the figure to free memory
         plt.close(fig)
 
-        # Create response with appropriate headers
         response = make_response(jsonify({"chart_url": chart_url}))
         response.headers["Content-Type"] = "application/json"
-        response.headers["Cache-Control"] = "max-age=300"  # Cache for 5 minutes
+        response.headers["Cache-Control"] = "max-age=300"
 
         return response
     except Exception as e:
@@ -288,24 +263,20 @@ def get_games_played_chart():
         if not stats:
             return make_response(jsonify({"error": "No data available"}), 404)
 
-        # Sort models by number of games played
         sorted_models = sorted(
             stats.items(), key=lambda x: x[1]["games_played"], reverse=True
         )
 
-        # Extract data for chart
         models = [model for model, _ in sorted_models]
         games_played = [stats[model]["games_played"] for model in models]
         mafia_games = [stats[model]["mafia_games"] for model in models]
         villager_games = [stats[model]["villager_games"] for model in models]
         doctor_games = [stats[model]["doctor_games"] for model in models]
 
-        # Create chart with explicit figure and axes
         fig, ax = plt.subplots(figsize=(12, 8))
-        fig.set_facecolor("white")  # Set white background
-        ax.set_facecolor("white")  # Set white background for plot area
+        fig.set_facecolor("white")
+        ax.set_facecolor("white")
 
-        # Create stacked bars
         ax.bar(models, mafia_games, label="Mafia", color="red")
         ax.bar(
             models, villager_games, bottom=mafia_games, label="Villager", color="green"
@@ -318,51 +289,40 @@ def get_games_played_chart():
             color="purple",
         )
 
-        # Add labels and title
         ax.set_xlabel("Models", fontsize=12, fontweight="bold")
         ax.set_ylabel("Games Played", fontsize=12, fontweight="bold")
         ax.set_title("Games Played by Model and Role", fontsize=14, fontweight="bold")
 
-        # Ensure axes are visible
         ax.spines["top"].set_visible(True)
         ax.spines["right"].set_visible(True)
         ax.spines["bottom"].set_visible(True)
         ax.spines["left"].set_visible(True)
 
-        # Set tick parameters to ensure visibility
         ax.tick_params(axis="both", which="major", labelsize=10, width=1, length=5)
         ax.tick_params(axis="both", which="minor", width=1, length=3)
 
-        # Set x-ticks
         ax.set_xticks([model for model in models])
         ax.set_xticklabels(
             [model.split("/")[-1] for model in models], rotation=45, ha="right"
         )
 
-        # Add grid for better readability
         ax.grid(axis="y", linestyle="--", alpha=0.7)
 
-        # Add legend
         ax.legend(fontsize=10)
 
-        # Adjust layout
         plt.tight_layout()
 
-        # Save chart to memory with optimized settings
         img = io.BytesIO()
         plt.savefig(img, format="png", dpi=120, bbox_inches="tight", pad_inches=0.2)
         img.seek(0)
 
-        # Encode chart as base64
         chart_url = base64.b64encode(img.getvalue()).decode()
 
-        # Close the figure to free memory
         plt.close(fig)
 
-        # Create response with appropriate headers
         response = make_response(jsonify({"chart_url": chart_url}))
         response.headers["Content-Type"] = "application/json"
-        response.headers["Cache-Control"] = "max-age=300"  # Cache for 5 minutes
+        response.headers["Cache-Control"] = "max-age=300"
 
         return response
     except Exception as e:
@@ -378,12 +338,10 @@ def get_win_rate_image():
         if not stats:
             return make_response("No data available", 404)
 
-        # Sort models by overall win rate
         sorted_models = sorted(
             stats.items(), key=lambda x: x[1]["win_rate"], reverse=True
         )
 
-        # Extract data for chart
         models = [model for model, _ in sorted_models]
         win_rates = [stats[model]["win_rate"] * 100 for model in models]
         mafia_win_rates = [stats[model]["mafia_win_rate"] * 100 for model in models]
@@ -392,68 +350,54 @@ def get_win_rate_image():
         ]
         doctor_win_rates = [stats[model]["doctor_win_rate"] * 100 for model in models]
 
-        # Create chart with explicit figure and axes
         fig, ax = plt.subplots(figsize=(12, 8))
-        fig.set_facecolor("white")  # Set white background
-        ax.set_facecolor("white")  # Set white background for plot area
+        fig.set_facecolor("white")
+        ax.set_facecolor("white")
 
-        # Set width of bars
         bar_width = 0.2
 
-        # Set position of bars on x axis
         r1 = np.arange(len(models))
         r2 = [x + bar_width for x in r1]
         r3 = [x + bar_width for x in r2]
         r4 = [x + bar_width for x in r3]
 
-        # Create bars
         ax.bar(r1, win_rates, width=bar_width, label="Overall", color="blue")
         ax.bar(r2, mafia_win_rates, width=bar_width, label="Mafia", color="red")
         ax.bar(r3, villager_win_rates, width=bar_width, label="Villager", color="green")
         ax.bar(r4, doctor_win_rates, width=bar_width, label="Doctor", color="purple")
 
-        # Add labels and title
         ax.set_xlabel("Models", fontsize=12, fontweight="bold")
         ax.set_ylabel("Win Rate (%)", fontsize=12, fontweight="bold")
         ax.set_title("Win Rates by Model and Role", fontsize=14, fontweight="bold")
 
-        # Ensure axes are visible
         ax.spines["top"].set_visible(True)
         ax.spines["right"].set_visible(True)
         ax.spines["bottom"].set_visible(True)
         ax.spines["left"].set_visible(True)
 
-        # Set tick parameters to ensure visibility
         ax.tick_params(axis="both", which="major", labelsize=10, width=1, length=5)
         ax.tick_params(axis="both", which="minor", width=1, length=3)
 
-        # Set x-ticks
         ax.set_xticks([r + bar_width * 1.5 for r in range(len(models))])
         ax.set_xticklabels(
             [model.split("/")[-1] for model in models], rotation=45, ha="right"
         )
 
-        # Add grid for better readability
         ax.grid(axis="y", linestyle="--", alpha=0.7)
 
-        # Add legend
         ax.legend(fontsize=10)
 
-        # Adjust layout
         plt.tight_layout()
 
-        # Save chart to memory with optimized settings
         img = io.BytesIO()
         plt.savefig(img, format="png", dpi=120, bbox_inches="tight", pad_inches=0.2)
         img.seek(0)
 
-        # Close the figure to free memory
         plt.close(fig)
 
-        # Return the image directly
         response = make_response(img.getvalue())
         response.headers["Content-Type"] = "image/png"
-        response.headers["Cache-Control"] = "max-age=300"  # Cache for 5 minutes
+        response.headers["Cache-Control"] = "max-age=300"
 
         return response
     except Exception as e:
@@ -469,24 +413,20 @@ def get_games_played_image():
         if not stats:
             return make_response("No data available", 404)
 
-        # Sort models by number of games played
         sorted_models = sorted(
             stats.items(), key=lambda x: x[1]["games_played"], reverse=True
         )
 
-        # Extract data for chart
         models = [model for model, _ in sorted_models]
         games_played = [stats[model]["games_played"] for model in models]
         mafia_games = [stats[model]["mafia_games"] for model in models]
         villager_games = [stats[model]["villager_games"] for model in models]
         doctor_games = [stats[model]["doctor_games"] for model in models]
 
-        # Create chart with explicit figure and axes
         fig, ax = plt.subplots(figsize=(12, 8))
-        fig.set_facecolor("white")  # Set white background
-        ax.set_facecolor("white")  # Set white background for plot area
+        fig.set_facecolor("white")
+        ax.set_facecolor("white")
 
-        # Create stacked bars
         ax.bar(models, mafia_games, label="Mafia", color="red")
         ax.bar(
             models, villager_games, bottom=mafia_games, label="Villager", color="green"
@@ -499,48 +439,38 @@ def get_games_played_image():
             color="purple",
         )
 
-        # Add labels and title
         ax.set_xlabel("Models", fontsize=12, fontweight="bold")
         ax.set_ylabel("Games Played", fontsize=12, fontweight="bold")
         ax.set_title("Games Played by Model and Role", fontsize=14, fontweight="bold")
 
-        # Ensure axes are visible
         ax.spines["top"].set_visible(True)
         ax.spines["right"].set_visible(True)
         ax.spines["bottom"].set_visible(True)
         ax.spines["left"].set_visible(True)
 
-        # Set tick parameters to ensure visibility
         ax.tick_params(axis="both", which="major", labelsize=10, width=1, length=5)
         ax.tick_params(axis="both", which="minor", width=1, length=3)
 
-        # Set x-ticks
         ax.set_xticks([model for model in models])
         ax.set_xticklabels(
             [model.split("/")[-1] for model in models], rotation=45, ha="right"
         )
 
-        # Add grid for better readability
         ax.grid(axis="y", linestyle="--", alpha=0.7)
 
-        # Add legend
         ax.legend(fontsize=10)
 
-        # Adjust layout
         plt.tight_layout()
 
-        # Save chart to memory with optimized settings
         img = io.BytesIO()
         plt.savefig(img, format="png", dpi=120, bbox_inches="tight", pad_inches=0.2)
         img.seek(0)
 
-        # Close the figure to free memory
         plt.close(fig)
 
-        # Return the image directly
         response = make_response(img.getvalue())
         response.headers["Content-Type"] = "image/png"
-        response.headers["Cache-Control"] = "max-age=300"  # Cache for 5 minutes
+        response.headers["Cache-Control"] = "max-age=300"
 
         return response
     except Exception as e:
@@ -549,7 +479,6 @@ def get_games_played_image():
 
 if __name__ == "__main__":
     try:
-        # Parse command line arguments
         import argparse
 
         parser = argparse.ArgumentParser(description="LLM Mafia Dashboard")
@@ -558,7 +487,6 @@ if __name__ == "__main__":
         )
         args = parser.parse_args()
 
-        # Run the app
         print(f"Starting the dashboard application on port {args.port}...")
         app.run(debug=True, host="0.0.0.0", port=args.port)
     except Exception as e:

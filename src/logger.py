@@ -16,7 +16,6 @@ class Color(Enum):
     BOLD = "\033[1m"
     UNDERLINE = "\033[4m"
 
-    # Foreground colors
     BLACK = "\033[30m"
     RED = "\033[31m"
     GREEN = "\033[32m"
@@ -26,7 +25,6 @@ class Color(Enum):
     CYAN = "\033[36m"
     WHITE = "\033[37m"
 
-    # Background colors
     BG_BLACK = "\033[40m"
     BG_RED = "\033[41m"
     BG_GREEN = "\033[42m"
@@ -36,7 +34,6 @@ class Color(Enum):
     BG_CYAN = "\033[46m"
     BG_WHITE = "\033[47m"
 
-    # Bright foreground colors
     BRIGHT_BLACK = "\033[90m"
     BRIGHT_RED = "\033[91m"
     BRIGHT_GREEN = "\033[92m"
@@ -50,7 +47,6 @@ class Color(Enum):
 class GameLogger:
     """Logger for the Mafia game simulation."""
 
-    # Make Color accessible as a class attribute
     Color = Color
 
     def __init__(self, log_to_file=True, log_dir="logs"):
@@ -64,21 +60,18 @@ class GameLogger:
         self.log_to_file = log_to_file
         self.log_file = None
 
-        # Role colors
         self.role_colors = {
             "Mafia": Color.RED,
             "Villager": Color.GREEN,
             "Doctor": Color.BLUE,
         }
 
-        # Phase colors
         self.phase_colors = {
             "setup": Color.CYAN,
             "night": Color.BRIGHT_BLUE,
             "day": Color.BRIGHT_YELLOW,
         }
 
-        # Create log directory if needed
         if log_to_file:
             os.makedirs(log_dir, exist_ok=True)
             timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
@@ -92,7 +85,6 @@ class GameLogger:
     def _write_to_file(self, text):
         """Write plain text to log file."""
         if self.log_to_file and self.log_file:
-            # Remove ANSI color codes for file logging
             clean_text = text
             for color in Color:
                 clean_text = clean_text.replace(color.value, "")
@@ -184,10 +176,8 @@ class GameLogger:
         """
         role_color = self.role_colors.get(role, Color.WHITE)
 
-        # Format the response with indentation
         formatted_response = response.replace("\n", "\n    ")
 
-        # Display both model name and player name if provided
         display_name = model_name
         if player_name and player_name != model_name:
             display_name = f"{player_name} [{model_name}]"
@@ -208,7 +198,6 @@ class GameLogger:
         """
         role_color = self.role_colors.get(role, Color.WHITE)
 
-        # Display both model name and player name if provided
         display_name = model_name
         if player_name and player_name != model_name:
             display_name = f"{player_name} [{model_name}]"
@@ -240,18 +229,15 @@ class GameLogger:
             issue_type (str): Type of issue (e.g., "timeout", "empty_response", "invalid_format").
             details (str): Additional details about the issue.
         """
-        # Create a timestamp
+
         timestamp = time.strftime("%Y-%m-%d %H:%M:%S")
 
-        # Format the log message
         log_message = (
             f"[{timestamp}] MODEL ISSUE: {model_name} - {issue_type} - {details}"
         )
 
-        # Print to console
         self.print(log_message, Color.BRIGHT_YELLOW, bold=True)
 
-        # Also log to a model-specific log file
         model_short_name = model_name.split("/")[-1].replace(":", "_")
         log_dir = "logs/model_issues"
         os.makedirs(log_dir, exist_ok=True)

@@ -9,11 +9,9 @@ from firebase_admin import credentials, firestore
 import os
 import sys
 
-# Add flexible import handling
 try:
     import src.config as config
 except ImportError:
-    # When running the script directly
     sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
     import config
 
@@ -59,7 +57,6 @@ class FirebaseManager:
             return False
 
         try:
-            # Create game result data
             game_data = {
                 "game_id": game_id,
                 "timestamp": int(time.time()),
@@ -70,7 +67,6 @@ class FirebaseManager:
                 "participants": participants,
             }
 
-            # Store in Firebase
             self.db.collection("mafia_games").document(game_id).set(game_data)
             return True
         except Exception as e:
@@ -105,7 +101,6 @@ class FirebaseManager:
             return False
 
         try:
-            # Create game log data
             log_data = {
                 "game_id": game_id,
                 "timestamp": int(time.time()),
@@ -115,11 +110,9 @@ class FirebaseManager:
                 "rounds": rounds,
             }
 
-            # Add critic review if available
             if critic_review:
                 log_data["critic_review"] = critic_review
 
-            # Store in Firebase
             self.db.collection("game_logs").document(game_id).set(log_data)
             return True
         except Exception as e:
@@ -141,7 +134,6 @@ class FirebaseManager:
             return []
 
         try:
-            # Query Firestore for game results, ordered by timestamp
             results = (
                 self.db.collection("mafia_games")
                 .order_by("timestamp", direction=firestore.Query.DESCENDING)
@@ -149,7 +141,6 @@ class FirebaseManager:
                 .stream()
             )
 
-            # Convert to list
             return [doc.to_dict() for doc in results]
         except Exception as e:
             print(f"Error getting game results: {e}")
@@ -167,32 +158,22 @@ class FirebaseManager:
             return {}
 
         try:
-            # Get all game results
             results = self.get_game_results(limit=1000)
 
-            # Initialize stats
             stats = {}
 
-            # Process each game
             for game in results:
                 winner = game.get("winner")
                 participants = game.get("participants", {})
 
                 for player_name, data in participants.items():
-                    # Handle both old and new format
                     if isinstance(data, dict):
                         role = data.get("role")
-                        model = data.get(
-                            "model_name", player_name
-                        )  # Use player_name as fallback
+                        model = data.get("model_name", player_name)
                     else:
-                        # Legacy format where data is just the role string
                         role = data
-                        model = (
-                            player_name  # In legacy format, the key was the model name
-                        )
+                        model = player_name
 
-                    # Initialize model stats if not exists
                     if model not in stats:
                         stats[model] = {
                             "games_played": 0,
@@ -205,10 +186,8 @@ class FirebaseManager:
                             "doctor_wins": 0,
                         }
 
-                    # Update games played
                     stats[model]["games_played"] += 1
 
-                    # Update role-specific stats
                     if role == "Mafia":
                         stats[model]["mafia_games"] += 1
                         if winner == "Mafia":
@@ -225,7 +204,6 @@ class FirebaseManager:
                             stats[model]["villager_wins"] += 1
                             stats[model]["games_won"] += 1
 
-            # Calculate win rates
             for model in stats:
                 stats[model]["win_rate"] = (
                     stats[model]["games_won"] / stats[model]["games_played"]
@@ -268,7 +246,6 @@ class FirebaseManager:
             return None
 
         try:
-            # Get game log from Firestore
             log_doc = self.db.collection("game_logs").document(game_id).get()
 
             if not log_doc.exists:
@@ -277,7 +254,6 @@ class FirebaseManager:
 
             log_data = log_doc.to_dict()
 
-            # Get game result to include participant roles
             result_doc = self.db.collection("mafia_games").document(game_id).get()
 
             if result_doc.exists:

@@ -36,7 +36,7 @@ class Player:
         self.player_name = player_name
         self.role = role
         self.alive = True
-        self.protected = False  # Whether the player is protected by the doctor
+        self.protected = False
         self.language = language if language else "English"
 
     def __str__(self):
@@ -68,7 +68,7 @@ class Player:
         return None
 
     def generate_prompt(
-            self, game_state, all_players, mafia_members=None, discussion_history=None
+        self, game_state, all_players, mafia_members=None, discussion_history=None
     ):
         """
         Generate a prompt for the player based on their role.
@@ -86,21 +86,15 @@ class Player:
         if discussion_history is None:
             discussion_history = ""
 
-        # Get list of player names (using visible player names)
         player_names = [p.player_name for p in all_players if p.alive]
 
-        # Make sure we're only using player_name (not model_name) for other players
-        # This ensures players only know each other by their player names
         player_info = [{"name": p.player_name, "alive": p.alive} for p in all_players]
 
-        # Get the appropriate language, defaulting to English if not supported
         language = self.language if self.language in GAME_RULES else "English"
 
-        # Get game rules for the player's language
         game_rules = GAME_RULES[language]
 
         if self.role == Role.MAFIA:
-            # For Mafia members (using visible player names)
             mafia_names = [
                 p.player_name for p in mafia_members if p != self and p.alive
             ]
@@ -113,7 +107,7 @@ class Player:
                 mafia_list = f"{', '.join(mafia_names) if mafia_names else '없음 (당신이 유일하게 남은 마피아입니다)'}"
 
             prompt = PROMPT_TEMPLATES[language][Role.MAFIA].format(
-                model_name=self.player_name,  # Use player_name in prompts
+                model_name=self.player_name,
                 game_rules=game_rules,
                 mafia_members=mafia_list,
                 player_names=", ".join(player_names),
@@ -122,19 +116,17 @@ class Player:
                 discussion_history=discussion_history,
             )
         elif self.role == Role.DOCTOR:
-            # For Doctor
             prompt = PROMPT_TEMPLATES[language][Role.DOCTOR].format(
-                model_name=self.player_name,  # Use player_name in prompts
+                model_name=self.player_name,
                 game_rules=game_rules,
                 player_names=", ".join(player_names),
                 game_state=game_state,
                 thinking_tag=THINKING_TAGS[language],
                 discussion_history=discussion_history,
             )
-        else:  # Role.VILLAGER
-            # For Villagers
+        else:
             prompt = PROMPT_TEMPLATES[language][Role.VILLAGER].format(
-                model_name=self.player_name,  # Use player_name in prompts
+                model_name=self.player_name,
                 game_rules=game_rules,
                 player_names=", ".join(player_names),
                 game_state=game_state,
@@ -156,10 +148,8 @@ class Player:
         """
         response = get_llm_response(self.model_name, prompt)
 
-        # Remove any <think></think> tags and their contents before sharing with other players
         cleaned_response = re.sub(r"<think>.*?</think>", "", response, flags=re.DOTALL)
 
-        # Clean up any extra whitespace that might have been created
         cleaned_response = re.sub(r"\n\s*\n", "\n\n", cleaned_response)
         cleaned_response = cleaned_response.strip()
 
@@ -180,26 +170,26 @@ class Player:
             pattern = r"ACTION:\s*Kill\s+([A-Za-z][A-Za-z\s'-]*)"
             match = re.search(pattern, response, re.IGNORECASE)
             if match:
-                target_name = match.group(1).strip().rstrip('.:,; \t')
+                target_name = match.group(1).strip().rstrip(".:,; \t")
                 for p in all_players:
                     if (
-                            p.player_name.lower() == target_name.lower()
-                            and p.alive
-                            and p.role != Role.MAFIA
-                            and p.player_name != self.player_name
+                        p.player_name.lower() == target_name.lower()
+                        and p.alive
+                        and p.role != Role.MAFIA
+                        and p.player_name != self.player_name
                     ):
                         return "kill", p
             return None, None
 
         elif self.role == Role.DOCTOR:
-            # Ищем паттерн защиты
-            pattern = ACTION_PATTERNS.get(self.language, ACTION_PATTERNS["English"])[Role.DOCTOR]
+            pattern = ACTION_PATTERNS.get(self.language, ACTION_PATTERNS["English"])[
+                Role.DOCTOR
+            ]
             match = re.search(pattern, response, re.IGNORECASE)
             if match:
                 target_name = match.group(1).strip()
-                target_name = target_name.rstrip('.:,; \t')
+                target_name = target_name.rstrip(".:,; \t")
                 for p in all_players:
-                    # Доктору можно защищать любого живого
                     if p.player_name.lower() == target_name.lower() and p.alive:
                         return "protect", p
             return None, None
@@ -218,21 +208,21 @@ class Player:
         Returns:
             Player or None: The player being voted for (по player_name), или None если голос невалиден/нет голоса.
         """
-        # Получаем паттерн поиска VOTE:
+
         pattern = VOTE_PATTERNS.get(self.language, VOTE_PATTERNS["English"])
         match = re.search(pattern, response, re.IGNORECASE)
 
         if match:
             target_name_raw = match.group(1).strip()
-            # Сравниваем имена игроков только по player_name, регистр не важен
+
             for p in all_players:
                 if (
-                        p.player_name.lower() == target_name_raw.lower() and
-                        p.player_name != self.player_name and
-                        p.alive
+                    p.player_name.lower() == target_name_raw.lower()
+                    and p.player_name != self.player_name
+                    and p.alive
                 ):
                     return p
-            # если нашли только себя или мертвого, игнорируем
+
         return None
 
     def get_confirmation_vote(self, game_state):
@@ -249,13 +239,15 @@ class Player:
         game_state_str = game_state["game_state"]
 
         language = (
-            self.language if self.language in CONFIRMATION_VOTE_EXPLANATIONS else "English"
+            self.language
+            if self.language in CONFIRMATION_VOTE_EXPLANATIONS
+            else "English"
         )
         confirmation_explanation = CONFIRMATION_VOTE_EXPLANATIONS[language].format(
             player_to_eliminate=player_to_eliminate
         )
         prompt = CONFIRMATION_VOTE_TEMPLATES[language].format(
-            model_name=self.player_name,  # только player_name!
+            model_name=self.player_name,
             player_to_eliminate=player_to_eliminate,
             confirmation_explanation=confirmation_explanation,
             game_state_str=game_state_str,
@@ -263,15 +255,14 @@ class Player:
         )
 
         response = self.get_response(prompt)
-        # Очищаем response
+
         response_clean = sanitize_model_response(
-            response,
-            self.player_name,
-            [],  # Нет необходимости в списке других имен тут, мы pattern-ищем agree/disagree
-            "confirmation"
+            response, self.player_name, [], "confirmation"
         ).lower()
 
-        lang_patterns = CONFIRMATION_VOTE_PATTERNS.get(language, CONFIRMATION_VOTE_PATTERNS["English"])
+        lang_patterns = CONFIRMATION_VOTE_PATTERNS.get(
+            language, CONFIRMATION_VOTE_PATTERNS["English"]
+        )
         agree_pat = lang_patterns["agree"]
         disagree_pat = lang_patterns["disagree"]
 
@@ -280,5 +271,4 @@ class Player:
         elif re.search(disagree_pat, response_clean):
             return "disagree"
         else:
-            # Не найден ответ — по умолчанию "disagree"
             return "disagree"

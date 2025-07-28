@@ -15,7 +15,6 @@ def initialize_database():
         print("Firebase not initialized. Cannot initialize database.")
         return False
 
-    # Create sample game data
     sample_games = [
         {
             "game_id": str(uuid.uuid4()),
@@ -117,7 +116,6 @@ def initialize_database():
         },
     ]
 
-    # Store sample games in Firebase
     success_count = 0
     for game in sample_games:
         if firebase.store_game_result(
@@ -128,7 +126,7 @@ def initialize_database():
         ):
             success_count += 1
             print(f"Successfully stored game {game['game_id']}")
-            # Add a small delay to ensure different timestamps
+
             time.sleep(1)
 
     print(f"Successfully initialized database with {success_count} sample games.")

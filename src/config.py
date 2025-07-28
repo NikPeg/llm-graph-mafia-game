@@ -7,19 +7,17 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
-OPENROUTER_API_URL = os.getenv("OPENROUTER_API_URL", "http://localhost:8000/v1/chat/completions")
+OPENROUTER_API_URL = os.getenv(
+    "OPENROUTER_API_URL", "http://localhost:8000/v1/chat/completions"
+)
 
-# OpenAI-совместимый локальный API (например, vLLM)
-# Endpoints:
-# vLLM:         http://localhost:8000/v1/completions
-# text-gen-ui:  http://localhost:5000/v1/completions
-LOCAL_LLM_API_URL = os.getenv("LOCAL_LLM_API_URL", "http://localhost:8000/v1/chat/completions")
+LOCAL_LLM_API_URL = os.getenv(
+    "LOCAL_LLM_API_URL", "http://localhost:8000/v1/chat/completions"
+)
 OPENROUTER_API_KEY = os.getenv("OPENROUTER_API_KEY", "local_test_key")
 
-# Firebase settings (не изменяем для локального теста)
 FIREBASE_CREDENTIALS_PATH = "firebase_credentials.json"
 
-# Модели - список строк Huggingface
 AVAILABLE_MODELS = [
     "gryphe/mythomax-l2-13b",
     "mistralai/mistral-small-24b-instruct-2501",
@@ -29,15 +27,12 @@ AVAILABLE_MODELS = [
     "deepseek-ai/DeepSeek-R1-Distill-Qwen-32B",
 ]
 
-# Модель по умолчанию
 DEFAULT_MODEL = AVAILABLE_MODELS[0]
 
-# Можно задать через переменную окружения, иначе дефолт
 MODEL_NAME = os.getenv("MODEL_NAME", DEFAULT_MODEL)
 
 CLAUDE_3_7_SONNET = MODEL_NAME
 
-# Game configuration
 NUM_GAMES = int(os.getenv("NUM_GAMES", 1))
 PLAYERS_PER_GAME = int(os.getenv("PLAYERS_PER_GAME", 8))
 MAFIA_COUNT = int(os.getenv("MAFIA_COUNT", 2))

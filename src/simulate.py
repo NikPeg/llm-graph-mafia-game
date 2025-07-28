@@ -11,6 +11,7 @@ from game import MafiaGame
 from firebase_manager import FirebaseManager
 from logger import GameLogger, Color
 
+
 def run_single_game(game_number, language=None, model_name=None):
     """
     Run a single Mafia game (all players as clones of model_name).
@@ -22,7 +23,9 @@ def run_single_game(game_number, language=None, model_name=None):
         tuple: (game_number, winner, rounds_data, participants, game_id, language, critic_review)
     """
     game = MafiaGame(language=language)
-    winner, rounds_data, participants, language, critic_review = game.run_game(game_number)
+    winner, rounds_data, participants, language, critic_review = game.run_game(
+        game_number
+    )
     return (
         game_number,
         winner,
@@ -33,19 +36,18 @@ def run_single_game(game_number, language=None, model_name=None):
         critic_review,
     )
 
-def run_simulation(
-        num_games=config.NUM_GAMES,
-        parallel=False,
-        max_workers=4,
-        language=None,
-        model_name=None,
-):
 
+def run_simulation(
+    num_games=config.NUM_GAMES,
+    parallel=False,
+    max_workers=4,
+    language=None,
+    model_name=None,
+):
     logger = GameLogger()
     logger.header(f"STARTING SIMULATION WITH {num_games} GAMES", Color.BRIGHT_MAGENTA)
     start_time = time.time()
 
-    # Initialize Firebase
     firebase = FirebaseManager()
     stats = {
         "total_games": num_games,
@@ -73,8 +75,7 @@ def run_simulation(
         logger.error("No model specified in config.MODELS!")
         return stats
 
-    # Sequential or parallel run
-    def handle_result(fut, game_number=None):  # utility for both code paths
+    def handle_result(fut, game_number=None):
         try:
             (
                 game_number,
@@ -85,7 +86,7 @@ def run_simulation(
                 language,
                 critic_review,
             ) = fut if isinstance(fut, tuple) else fut.result()
-            # Firebase
+
             if firebase.initialized:
                 firebase.store_game_result(
                     game_id, winner, participants, language=language
@@ -97,14 +98,13 @@ def run_simulation(
                     language=language,
                     critic_review=critic_review,
                 )
-            # Stats
+
             stats["completed_games"] += 1
             if winner == "Mafia":
                 stats["mafia_wins"] += 1
             else:
                 stats["villager_wins"] += 1
             for player_name, role_data in participants.items():
-                # Modern format:
                 if isinstance(role_data, dict):
                     role = role_data.get("role")
                     model = role_data.get("model_name", model_to_use)
@@ -127,7 +127,7 @@ def run_simulation(
                     if winner == "Villagers":
                         stats["model_stats"][model]["villager_wins"] += 1
                         stats["model_stats"][model]["wins"] += 1
-            # Log game
+
             win_color = Color.RED if winner == "Mafia" else Color.GREEN
             logger.print(
                 f"Game {game_number} completed. Winner: {winner}",
@@ -135,7 +135,9 @@ def run_simulation(
                 bold=True,
             )
         except Exception as e:
-            logger.error(f"Game {game_number if game_number is not None else '?'} generated an exception: {e}")
+            logger.error(
+                f"Game {game_number if game_number is not None else '?'} generated an exception: {e}"
+            )
 
     if parallel and num_games > 1:
         with concurrent.futures.ThreadPoolExecutor(max_workers=max_workers) as executor:
@@ -164,9 +166,10 @@ def run_simulation(
     village = stats["villager_wins"]
     print("\n======= GAME RESULT SUMMARY =======")
     print(f"Всего партий: {num}")
-    print(f"Побед мафии: {mafia}   ({mafia/num:.1%})")
-    print(f"Побед мирных: {village}   ({village/num:.1%})")
+    print(f"Побед мафии: {mafia}   ({mafia / num:.1%})")
+    print(f"Побед мирных: {village}   ({village / num:.1%})")
     return stats
+
 
 if __name__ == "__main__":
     if config.RANDOM_SEED is not None:

@@ -10,7 +10,6 @@ import time
 import random
 from logger import GameLogger
 
-# Create a logger instance for model-specific issues
 model_logger = GameLogger(log_to_file=True)
 
 
@@ -25,10 +24,9 @@ def get_llm_response(model_name, prompt):
     Returns:
         str: The response from the model.
     """
-    # Get model-specific configuration if available
+
     model_config = config.MODEL_CONFIGS.get(model_name, {})
 
-    # Set timeout, max_retries, and backoff_factor based on model config or defaults
     timeout = model_config.get("timeout", config.API_TIMEOUT)
 
     headers = {
@@ -47,7 +45,7 @@ def get_llm_response(model_name, prompt):
             config.OPENROUTER_API_URL,
             headers=headers,
             data=json.dumps(data),
-            timeout=timeout,  # Use model-specific timeout
+            timeout=timeout,
         )
         response.raise_for_status()
 
@@ -55,10 +53,8 @@ def get_llm_response(model_name, prompt):
         return result["choices"][0]["message"]["content"]
 
     except Exception as e:
-        # Initialize response_text to handle cases where response is not defined
         response_text = "No response received"
 
-        # Only try to access response.text if response is defined
         try:
             if "response" in locals():
                 response_text = response.text

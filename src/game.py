@@ -51,7 +51,7 @@ class MafiaGame:
         if config.RANDOM_SEED is not None:
             random.seed(config.RANDOM_SEED)
 
-        self.logger = GameLogger()
+        self.logger = GameLogger(game_id=self.game_id)
 
     def setup_game(self, game_number=1):
         """

@@ -44,7 +44,7 @@ def run_simulation(
     language=None,
     model_name=None,
 ):
-    logger = GameLogger()
+    logger = GameLogger(game_id="SIMULATION")
     logger.header(f"STARTING SIMULATION WITH {num_games} GAMES", Color.BRIGHT_MAGENTA)
     start_time = time.time()
 

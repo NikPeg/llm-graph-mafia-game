@@ -49,16 +49,18 @@ class GameLogger:
 
     Color = Color
 
-    def __init__(self, log_to_file=True, log_dir="logs"):
+    def __init__(self, log_to_file=True, log_dir="logs", game_id=None):
         """
         Initialize the game logger.
 
         Args:
             log_to_file (bool): Whether to log to a file in addition to console.
             log_dir (str): Directory to store log files.
+            game_id (str, optional): Game ID to include in log messages.
         """
         self.log_to_file = log_to_file
         self.log_file = None
+        self.game_id = game_id
 
         self.role_colors = {
             "Mafia": Color.RED,
@@ -101,7 +103,12 @@ class GameLogger:
             bold (bool, optional): Whether to make text bold.
             underline (bool, optional): Whether to underline text.
         """
-        formatted_text = text
+        # Add game_id prefix if available
+        if self.game_id:
+            game_prefix = f"[{self.game_id[:8]}] "
+            formatted_text = f"{game_prefix}{text}"
+        else:
+            formatted_text = text
 
         if color:
             formatted_text = f"{color.value}{formatted_text}"

@@ -65,6 +65,8 @@ class MafiaGame:
 
         self.logger.game_start(game_number, self.game_id, self.language)
 
+        # In role-specific mode, we don't need to pre-select models since they're determined by role
+        # Keep this for compatibility but it won't be used in role-specific mode
         selected_models = random.choices(self.models, k=config.PLAYERS_PER_GAME)
 
         roles = []
@@ -84,7 +86,7 @@ class MafiaGame:
         random.shuffle(roles)
 
         self.logger.header("PLAYER SETUP", Color.CYAN)
-        for i, model_name in enumerate(selected_models):
+        for i, _ in enumerate(selected_models):
             used_names = [p.player_name for p in self.players]
             available_names = [name for name in player_names if name not in used_names]
 
@@ -92,6 +94,10 @@ class MafiaGame:
                 player_name = f"Player_{i + 1}"
             else:
                 player_name = random.choice(available_names)
+
+            # Get the appropriate model for this role
+            role_name = roles[i].value
+            model_name = config.get_model_for_role(role_name)
 
             player = Player(model_name, player_name, roles[i], language=self.language)
             self.players.append(player)

@@ -31,11 +31,39 @@ AVAILABLE_MODELS = [
 # Default model (first in the list)
 DEFAULT_MODEL = "gryphe/mythomax-l2-13b"
 
-# Model to use for the game (set via environment variable)
+# Experiment mode: 'single' for same model, 'role_specific' for different models per role
+EXPERIMENT_MODE = os.getenv("EXPERIMENT_MODE", "single")
+
+# Single model configuration (used when EXPERIMENT_MODE='single')
 MODEL_NAME = os.getenv("MODEL_NAME", DEFAULT_MODEL)
 
-# Legacy alias for compatibility
-CLAUDE_3_7_SONNET = MODEL_NAME
+# Role-specific model configuration (used when EXPERIMENT_MODE='role_specific')
+MAFIA_MODEL = os.getenv("MAFIA_MODEL", "deepseek-ai/DeepSeek-R1-Distill-Qwen-32B")
+VILLAGER_MODEL = os.getenv("VILLAGER_MODEL", "deepseek/deepseek-llm-7b-chat")
+DOCTOR_MODEL = os.getenv("DOCTOR_MODEL", "deepseek/deepseek-llm-7b-chat")
+
+def get_model_for_role(role):
+    """
+    Get the appropriate model name for a given role.
+    
+    Args:
+        role (str): The role name ('Mafia', 'Villager', 'Doctor')
+        
+    Returns:
+        str: The model name to use for this role
+    """
+    if EXPERIMENT_MODE == "role_specific":
+        role_models = {
+            "Mafia": MAFIA_MODEL,
+            "Villager": VILLAGER_MODEL,
+            "Doctor": DOCTOR_MODEL,
+        }
+        return role_models.get(role, MODEL_NAME)
+    else:
+        return MODEL_NAME
+
+# Legacy alias for compatibility (uses single model or mafia model for critic reviews)
+CLAUDE_3_7_SONNET = MAFIA_MODEL if EXPERIMENT_MODE == "role_specific" else MODEL_NAME
 
 NUM_GAMES = int(os.getenv("NUM_GAMES", 1))
 PARALLEL = os.getenv("PARALLEL", "false").lower() == "true"

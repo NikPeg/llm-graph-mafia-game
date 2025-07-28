@@ -389,6 +389,20 @@ class RAGManager:
             "auto_summaries": AutoSummariesRAG(),
             "analytical_hints": AnalyticalHintsRAG(),
         }
+        
+        # Короткие названия для логов и Firebase
+        self.short_names = {
+            "discussion_graph": "DG",
+            "history_graph": "HG",
+            "current_round_graph": "CRG",
+            "communication_graph": "CG",
+            "auto_summaries": "AS",
+            "analytical_hints": "AH",
+        }
+    
+    def get_short_name(self, rag_type: str) -> str:
+        """Получить короткое название RAG типа."""
+        return self.short_names.get(rag_type, rag_type.upper())
     
     def generate_rag_context(self, game_state: Dict[str, Any], player_role: str) -> str:
         """
@@ -399,25 +413,21 @@ class RAGManager:
             player_role: Role of the player requesting context
             
         Returns:
-            str: Combined RAG context from all enabled providers
+            str: RAG context from the configured provider
         """
         if not config.RAG_ENABLED:
             return ""
         
-        context_parts = []
+        rag_type = config.RAG_TYPE.strip()
+        if rag_type in self.providers:
+            provider = self.providers[rag_type]
+            
+            # Проверяем, применим ли этот RAG для данного игрока
+            if provider.is_applicable_for_player(player_role, config.RAG_TARGET):
+                try:
+                    context = provider.generate_context(game_state)
+                    return context if context else ""
+                except Exception as e:
+                    print(f"Error generating RAG context for {rag_type}: {e}")
         
-        for rag_type in config.RAG_TYPES:
-            rag_type = rag_type.strip()
-            if rag_type in self.providers:
-                provider = self.providers[rag_type]
-                
-                # Проверяем, применим ли этот RAG для данного игрока
-                if provider.is_applicable_for_player(player_role, config.RAG_TARGET):
-                    try:
-                        context = provider.generate_context(game_state)
-                        if context:
-                            context_parts.append(context)
-                    except Exception as e:
-                        print(f"Error generating RAG context for {rag_type}: {e}")
-        
-        return "".join(context_parts)
+        return ""

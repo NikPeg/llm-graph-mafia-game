@@ -23,7 +23,7 @@ def run_single_game(game_number, language=None, model_name=None):
         tuple: (game_number, winner, rounds_data, participants, game_id, language, critic_review)
     """
     game = MafiaGame(language=language)
-    winner, rounds_data, participants, language, critic_review, game_stats = game.run_game(
+    winner, rounds_data, participants, language, critic_review, game_stats, rag_info = game.run_game(
         game_number
     )
     return (
@@ -35,6 +35,7 @@ def run_single_game(game_number, language=None, model_name=None):
         language,
         critic_review,
         game_stats,
+        rag_info,
     )
 
 
@@ -87,11 +88,12 @@ def run_simulation(
                 language,
                 critic_review,
                 game_stats,
+                rag_info,
             ) = fut if isinstance(fut, tuple) else fut.result()
 
             if firebase.initialized:
                 firebase.store_game_result(
-                    game_id, winner, participants, language=language, game_stats=game_stats
+                    game_id, winner, participants, language=language, game_stats=game_stats, rag_info=rag_info
                 )
                 firebase.store_game_log(
                     game_id,
@@ -100,6 +102,7 @@ def run_simulation(
                     language=language,
                     critic_review=critic_review,
                     game_stats=game_stats,
+                    rag_info=rag_info,
                 )
 
             stats["completed_games"] += 1

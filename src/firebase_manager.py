@@ -39,6 +39,7 @@ class FirebaseManager:
         game_type=config.GAME_TYPE,
         language=config.LANGUAGE,
         game_stats=None,
+        rag_info=None,
     ):
         """
         Store the result of a game in Firebase.
@@ -72,6 +73,10 @@ class FirebaseManager:
             # Добавляем дополнительную статистику если она есть
             if game_stats:
                 game_data.update(game_stats)
+                
+            # Добавляем информацию о RAG если она есть
+            if rag_info:
+                game_data["rag_info"] = rag_info
 
             self.db.collection("mafia_games").document(game_id).set(game_data)
             return True
@@ -88,6 +93,7 @@ class FirebaseManager:
         language=config.LANGUAGE,
         critic_review=None,
         game_stats=None,
+        rag_info=None,
     ):
         """
         Store the log of a game in Firebase.
@@ -123,6 +129,9 @@ class FirebaseManager:
                 
             if game_stats:
                 log_data["game_stats"] = game_stats
+                
+            if rag_info:
+                log_data["rag_info"] = rag_info
 
             self.db.collection("game_logs").document(game_id).set(log_data)
             return True

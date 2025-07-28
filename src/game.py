@@ -276,6 +276,12 @@ class MafiaGame:
                 enhanced_discussion = self.discussion_history_without_thinkings()
                 if rag_context:
                     enhanced_discussion = rag_context + enhanced_discussion
+                    
+                    # Логируем информацию о RAG
+                    rag_short_name = self.rag_manager.get_short_name(config.RAG_TYPE)
+                    self.logger.log(
+                        f"[{player.player_name}] Playing with RAG: {rag_short_name}", Color.GREEN
+                    )
                 
                 prompt = player.generate_prompt(
                     game_state,
@@ -364,6 +370,12 @@ class MafiaGame:
             enhanced_discussion = self.discussion_history_without_thinkings()
             if rag_context:
                 enhanced_discussion = rag_context + enhanced_discussion
+                
+                # Логируем информацию о RAG
+                rag_short_name = self.rag_manager.get_short_name(config.RAG_TYPE)
+                self.logger.log(
+                    f"[{self.doctor_player.player_name}] Playing with RAG: {rag_short_name}", Color.GREEN
+                )
             
             prompt = self.doctor_player.generate_prompt(
                 game_state,
@@ -632,6 +644,12 @@ class MafiaGame:
             if rag_context:
                 enhanced_discussion = rag_context + enhanced_discussion
                 
+                # Логируем информацию о RAG
+                rag_short_name = self.rag_manager.get_short_name(config.RAG_TYPE)
+                self.logger.log(
+                    f"[{player.player_name}] Playing with RAG: {rag_short_name}", Color.GREEN
+                )
+                
                 if config.GRAPH_DEBUG:
                     self.logger.log(
                         f"\n[RAG CONTEXT for {player.player_name}]:\n{rag_context}", Color.CYAN
@@ -785,6 +803,12 @@ class MafiaGame:
         enhanced_discussion = self.discussion_history_without_thinkings()
         if rag_context:
             enhanced_discussion = rag_context + enhanced_discussion
+            
+            # Логируем информацию о RAG
+            rag_short_name = self.rag_manager.get_short_name(config.RAG_TYPE)
+            self.logger.log(
+                f"[{player.player_name}] Playing with RAG: {rag_short_name}", Color.GREEN
+            )
         
         prompt = player.generate_prompt(
             game_state,
@@ -911,7 +935,15 @@ class MafiaGame:
 
         self.logger.game_end(game_number, winner, self.round_number)
 
-        return winner, self.rounds_data, participants, self.language, critic_review, game_stats
+        # Добавляем информацию о RAG в результаты игры
+        rag_info = {
+            "enabled": config.RAG_ENABLED,
+            "type": config.RAG_TYPE if config.RAG_ENABLED else None,
+            "short_name": self.rag_manager.get_short_name(config.RAG_TYPE) if config.RAG_ENABLED else None,
+            "target": config.RAG_TARGET if config.RAG_ENABLED else None
+        }
+
+        return winner, self.rounds_data, participants, self.language, critic_review, game_stats, rag_info
 
     def generate_critic_review(self, winner):
         """

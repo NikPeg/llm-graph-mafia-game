@@ -213,11 +213,21 @@ class Player:
         match = re.search(pattern, response, re.IGNORECASE)
 
         if match:
-            target_name_raw = match.group(1).strip()
+            target_name_raw = match.group(1).strip().rstrip(".:,;!? \t")
 
+            # Попробуем найти точное совпадение
             for p in all_players:
                 if (
                     p.player_name.lower() == target_name_raw.lower()
+                    and p.player_name != self.player_name
+                    and p.alive
+                ):
+                    return p
+            
+            # Если точного совпадения нет, попробуем частичное совпадение
+            for p in all_players:
+                if (
+                    target_name_raw.lower() in p.player_name.lower()
                     and p.player_name != self.player_name
                     and p.alive
                 ):

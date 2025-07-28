@@ -430,10 +430,10 @@ ACTION_PATTERNS = {
 }
 
 VOTE_PATTERNS = {
-    "English": r"VOTE:\s*([\w./-]+(?:[-:]\w+)*)",
-    "Spanish": r"VOTO:\s*([\w./-]+(?:[-:]\w+)*)",
-    "French": r"VOTE:\s*([\w./-]+(?:[-:]\w+)*)",
-    "Korean": r"투표:\s*([\w./-]+(?:[-:]\w+)*)",
+    "English": r"VOTE:\s*([A-Za-z][A-Za-z\s'-]*?)(?:\s|$|[.,:;!?])",
+    "Spanish": r"VOTO:\s*([A-Za-z][A-Za-z\s'-]*?)(?:\s|$|[.,:;!?])",
+    "French": r"VOTE:\s*([A-Za-z][A-Za-z\s'-]*?)(?:\s|$|[.,:;!?])",
+    "Korean": r"투표:\s*([A-Za-z][A-Za-z\s'-]*?)(?:\s|$|[.,:;!?])",
 }
 
 CONFIRMATION_VOTE_PATTERNS = {

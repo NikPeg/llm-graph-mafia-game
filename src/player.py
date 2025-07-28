@@ -207,6 +207,7 @@ class Player:
 
         Returns:
             Player or None: The player being voted for (по player_name), или None если голос невалиден/нет голоса.
+            Возвращает специальный объект с player_name="None" если игрок голосует VOTE: None.
         """
 
         pattern = VOTE_PATTERNS.get(self.language, VOTE_PATTERNS["English"])
@@ -217,6 +218,15 @@ class Player:
         if matches:
             # Берем последний голос (самый актуальный)
             target_name_raw = matches[-1].strip().rstrip(".:,;!? \t")
+            
+            # Проверяем на "None" или "No one"
+            if target_name_raw.lower() in ["none", "no one", "nobody", "skip"]:
+                # Создаем специальный объект для обозначения "не голосовать"
+                class NoVote:
+                    def __init__(self):
+                        self.player_name = "None"
+                        self.alive = True
+                return NoVote()
 
             # Попробуем найти точное совпадение
             for p in all_players:

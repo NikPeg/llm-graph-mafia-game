@@ -50,8 +50,13 @@ def sanitize_model_response(
     phase_voting = phase_lower in ["vote", "voting", "day_voting"]
     phase_night = phase_lower == "night"
 
+    # Удаляем неуместные ACTION: команды из дневных фаз
     if phase_discussion:
         pattern = r"(?i)\n?(ACTION:|ACCIÓN:|VOTE:|PROTEGER|KILL)[^\n]*.*"
+        response = re.split(pattern, response)[0]
+    elif phase_voting:
+        # В фазе голосования удаляем только ACTION: команды, но оставляем VOTE:
+        pattern = r"(?i)\n?(ACTION:|ACCIÓN:|PROTEGER|KILL)[^\n]*.*"
         response = re.split(pattern, response)[0]
 
     if phase_night:

@@ -627,10 +627,21 @@ class MafiaGame:
             if collect_votes and votes is not None:
                 vote_target = player.parse_day_vote(sanitized, alive_players)
 
-                if (
+                # Проверяем на специальный случай "None" голоса
+                if vote_target and hasattr(vote_target, 'player_name') and vote_target.player_name == "None":
+                    # Игрок решил не голосовать
+                    self.logger.player_action(
+                        player.player_name,
+                        player.role.value,
+                        "Vote None (abstain)",
+                        player.player_name,
+                    )
+                    self.current_round_data["actions"][player.player_name] = "Vote None (abstain)"
+                    vote_target = None  # Не добавляем в голоса
+                elif (
                     (not vote_target)
-                    or (vote_target.player_name == player.player_name)
-                    or (not vote_target.alive)
+                    or (hasattr(vote_target, 'player_name') and vote_target.player_name == player.player_name)
+                    or (hasattr(vote_target, 'alive') and not vote_target.alive)
                 ):
                     possible_targets = [
                         p for p in alive_players if p.player_name != player.player_name
@@ -644,7 +655,7 @@ class MafiaGame:
                         
                         # Добавляем автоматический голос к контенту
                         vote_message = f"VOTE: {vote_target.player_name}"
-                        final_content = f"{sanitized} {vote_message}"
+                        final_content = f"{sanitized}\n\n{vote_message}"
                         
                         self.logger.player_action(
                             player.player_name,

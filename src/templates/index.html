@@ -45,11 +45,13 @@
                     <th>Mafia Win Rate</th>
                     <th>Villager Win Rate</th>
                     <th>Doctor Win Rate</th>
+                    <th>Avg Rounds</th>
+                    <th>Survival Rate</th>
                 </tr>
             </thead>
             <tbody>
                 <tr>
-                    <td colspan="6" class="loading">Loading data...</td>
+                    <td colspan="8" class="loading">Loading data...</td>
                 </tr>
             </tbody>
         </table>
@@ -61,13 +63,15 @@
                     <th>Game ID</th>
                     <th>Winner</th>
                     <th>Participants</th>
+                    <th>Rounds</th>
+                    <th>Survivors</th>
                     <th>Language</th>
                     <th>Timestamp</th>
                 </tr>
             </thead>
             <tbody>
                 <tr>
-                    <td colspan="5" class="loading">Loading data...</td>
+                    <td colspan="7" class="loading">Loading data...</td>
                 </tr>
             </tbody>
         </table>
@@ -118,8 +122,8 @@
                 });
         }
         
-        // Fetch model statistics
-        fetch('/api/stats')
+        // Fetch model statistics with extended metrics
+        fetch('/api/extended_stats')
             .then(response => {
                 if (!response.ok) {
                     throw new Error('Network response was not ok');
@@ -131,7 +135,7 @@
                 tableBody.innerHTML = '';
                 
                 if (Object.keys(data).length === 0) {
-                    tableBody.innerHTML = '<tr><td colspan="6" class="loading">No data available</td></tr>';
+                    tableBody.innerHTML = '<tr><td colspan="8" class="loading">No data available</td></tr>';
                     return;
                 }
                 
@@ -152,6 +156,8 @@
                         <td>${(stats.mafia_win_rate * 100).toFixed(2)}% (${stats.mafia_wins}/${stats.mafia_games})</td>
                         <td>${(stats.villager_win_rate * 100).toFixed(2)}% (${stats.villager_wins}/${stats.villager_games})</td>
                         <td>${(stats.doctor_win_rate * 100).toFixed(2)}% (${stats.doctor_wins}/${stats.doctor_games})</td>
+                        <td>${stats.avg_rounds_per_game ? stats.avg_rounds_per_game.toFixed(1) : 'N/A'}</td>
+                        <td>${stats.survival_rate ? (stats.survival_rate * 100).toFixed(1) + '%' : 'N/A'}</td>
                     `;
                     
                     tableBody.appendChild(row);
@@ -159,7 +165,7 @@
             })
             .catch(error => {
                 console.error('Error fetching model statistics:', error);
-                document.querySelector('#stats-table tbody').innerHTML = '<tr><td colspan="6" class="loading">Error loading data</td></tr>';
+                document.querySelector('#stats-table tbody').innerHTML = '<tr><td colspan="8" class="loading">Error loading data</td></tr>';
             });
         
         // Fetch recent games
@@ -175,7 +181,7 @@
                 tableBody.innerHTML = '';
                 
                 if (data.length === 0) {
-                    tableBody.innerHTML = '<tr><td colspan="5" class="loading">No games available</td></tr>';
+                    tableBody.innerHTML = '<tr><td colspan="7" class="loading">No games available</td></tr>';
                     return;
                 }
                 
@@ -212,6 +218,8 @@
                         <td><a href="/game/${game.game_id}" class="game-id">${game.game_id}</a></td>
                         <td>${game.winner}</td>
                         <td>${participants}</td>
+                        <td>${game.total_rounds || 'N/A'}</td>
+                        <td>${game.survivors_count || 'N/A'}</td>
                         <td>${game.language || "English"}</td>
                         <td>${formattedDate}</td>
                     `;
@@ -221,7 +229,7 @@
             })
             .catch(error => {
                 console.error('Error fetching recent games:', error);
-                document.querySelector('#games-table tbody').innerHTML = '<tr><td colspan="5" class="loading">Error loading data</td></tr>';
+                document.querySelector('#games-table tbody').innerHTML = '<tr><td colspan="7" class="loading">Error loading data</td></tr>';
             });
     </script>
 {% endblock %}

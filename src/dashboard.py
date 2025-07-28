@@ -52,6 +52,12 @@ class ModelStats:
     doctor_games: int
     doctor_wins: int
     doctor_win_rate: float
+    avg_rounds_per_game: float = 0.0
+    survival_rate: float = 0.0
+    elimination_rate: float = 0.0
+    survival_count: int = 0
+    elimination_count: int = 0
+    total_rounds: int = 0
 
 
 @dataclass
@@ -475,6 +481,91 @@ def get_games_played_image():
         return response
     except Exception as e:
         return make_response(str(e), 500)
+
+
+@app.route("/api/chart/survival_rates")
+def get_survival_rate_chart():
+    """Generate a survival rate chart."""
+    try:
+        stats = get_cached_model_stats()
+
+        if not stats:
+            return make_response(jsonify({"error": "No data available"}), 404)
+
+        # Фильтруем модели, у которых есть данные о выживаемости
+        models_with_survival = {k: v for k, v in stats.items() if v.get("survival_rate", 0) > 0 or v.get("games_played", 0) > 0}
+        
+        if not models_with_survival:
+            return make_response(jsonify({"error": "No survival data available"}), 404)
+
+        sorted_models = sorted(
+            models_with_survival.items(), key=lambda x: x[1].get("survival_rate", 0), reverse=True
+        )
+
+        models = [model for model, _ in sorted_models]
+        survival_rates = [stats[model].get("survival_rate", 0) * 100 for model in models]
+        avg_rounds = [stats[model].get("avg_rounds_per_game", 0) for model in models]
+
+        fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(16, 8))
+        fig.set_facecolor("white")
+
+        # Survival rates chart
+        ax1.bar(models, survival_rates, color="green", alpha=0.7)
+        ax1.set_xlabel("Models", fontsize=12, fontweight="bold")
+        ax1.set_ylabel("Survival Rate (%)", fontsize=12, fontweight="bold")
+        ax1.set_title("Survival Rates by Model", fontsize=14, fontweight="bold")
+        ax1.set_xticklabels([model.split("/")[-1] for model in models], rotation=45, ha="right")
+        ax1.grid(axis="y", linestyle="--", alpha=0.7)
+
+        # Average rounds chart
+        ax2.bar(models, avg_rounds, color="blue", alpha=0.7)
+        ax2.set_xlabel("Models", fontsize=12, fontweight="bold")
+        ax2.set_ylabel("Average Rounds per Game", fontsize=12, fontweight="bold")
+        ax2.set_title("Average Game Length by Model", fontsize=14, fontweight="bold")
+        ax2.set_xticklabels([model.split("/")[-1] for model in models], rotation=45, ha="right")
+        ax2.grid(axis="y", linestyle="--", alpha=0.7)
+
+        plt.tight_layout()
+
+        img = io.BytesIO()
+        plt.savefig(img, format="png", dpi=120, bbox_inches="tight", pad_inches=0.2)
+        img.seek(0)
+
+        chart_url = base64.b64encode(img.getvalue()).decode()
+
+        plt.close(fig)
+
+        response = make_response(jsonify({"chart_url": chart_url}))
+        response.headers["Content-Type"] = "application/json"
+        response.headers["Cache-Control"] = "max-age=300"
+
+        return response
+    except Exception as e:
+        return make_response(jsonify({"error": str(e)}), 500)
+
+
+@app.route("/api/extended_stats")
+def get_extended_stats():
+    """Get extended statistics including new metrics."""
+    try:
+        stats = get_cached_model_stats()
+        
+        # Добавляем безопасные значения по умолчанию для старых игр
+        for model_name, model_stats in stats.items():
+            model_stats.setdefault("avg_rounds_per_game", 0.0)
+            model_stats.setdefault("survival_rate", 0.0)
+            model_stats.setdefault("elimination_rate", 0.0)
+            model_stats.setdefault("survival_count", 0)
+            model_stats.setdefault("elimination_count", 0)
+            model_stats.setdefault("total_rounds", 0)
+
+        response = make_response(jsonify(stats))
+        response.headers["Content-Type"] = "application/json"
+        response.headers["Cache-Control"] = "max-age=60"
+
+        return response
+    except Exception as e:
+        return make_response(jsonify({"error": str(e)}), 500)
 
 
 if __name__ == "__main__":

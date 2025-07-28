@@ -34,6 +34,8 @@ MODEL_NAME = os.getenv("MODEL_NAME", DEFAULT_MODEL)
 CLAUDE_3_7_SONNET = MODEL_NAME
 
 NUM_GAMES = int(os.getenv("NUM_GAMES", 1))
+PARALLEL = os.getenv("PARALLEL", "false").lower() == "true"
+MAX_WORKERS = int(os.getenv("MAX_WORKERS", 4))
 PLAYERS_PER_GAME = int(os.getenv("PLAYERS_PER_GAME", 8))
 MAFIA_COUNT = int(os.getenv("MAFIA_COUNT", 2))
 DOCTOR_COUNT = int(os.getenv("DOCTOR_COUNT", 1))

@@ -39,8 +39,8 @@ def run_single_game(game_number, language=None, model_name=None):
 
 def run_simulation(
     num_games=config.NUM_GAMES,
-    parallel=False,
-    max_workers=4,
+    parallel=config.PARALLEL,
+    max_workers=config.MAX_WORKERS,
     language=None,
     model_name=None,
 ):
@@ -174,4 +174,8 @@ def run_simulation(
 if __name__ == "__main__":
     if config.RANDOM_SEED is not None:
         random.seed(config.RANDOM_SEED)
-    run_simulation(num_games=config.NUM_GAMES)
+    run_simulation(
+        num_games=config.NUM_GAMES,
+        parallel=config.PARALLEL,
+        max_workers=config.MAX_WORKERS
+    )

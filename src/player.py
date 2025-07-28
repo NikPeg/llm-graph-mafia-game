@@ -8,13 +8,10 @@ from openrouter import get_llm_response
 from game_templates import (
     Role,
     GAME_RULES,
-    CONFIRMATION_VOTE_EXPLANATIONS,
     PROMPT_TEMPLATES,
-    CONFIRMATION_VOTE_TEMPLATES,
     THINKING_TAGS,
     ACTION_PATTERNS,
     VOTE_PATTERNS,
-    CONFIRMATION_VOTE_PATTERNS,
 )
 from parsing import sanitize_model_response
 
@@ -242,50 +239,3 @@ class Player:
 
         return None
 
-    def get_confirmation_vote(self, game_state):
-        """
-        Get a confirmation vote from the player on whether to eliminate another player.
-
-        Args:
-            game_state (dict): The current state of the game, including who is up for elimination.
-
-        Returns:
-            str: "agree" or "disagree" indicating the player's vote
-        """
-        player_to_eliminate = game_state["confirmation_vote_for"]
-        game_state_str = game_state["game_state"]
-
-        language = (
-            self.language
-            if self.language in CONFIRMATION_VOTE_EXPLANATIONS
-            else "English"
-        )
-        confirmation_explanation = CONFIRMATION_VOTE_EXPLANATIONS[language].format(
-            player_to_eliminate=player_to_eliminate
-        )
-        prompt = CONFIRMATION_VOTE_TEMPLATES[language].format(
-            model_name=self.player_name,
-            player_to_eliminate=player_to_eliminate,
-            confirmation_explanation=confirmation_explanation,
-            game_state_str=game_state_str,
-            thinking_tag=THINKING_TAGS[language],
-        )
-
-        response = self.get_response(prompt)
-
-        response_clean = sanitize_model_response(
-            response, self.player_name, [], "confirmation"
-        ).lower()
-
-        lang_patterns = CONFIRMATION_VOTE_PATTERNS.get(
-            language, CONFIRMATION_VOTE_PATTERNS["English"]
-        )
-        agree_pat = lang_patterns["agree"]
-        disagree_pat = lang_patterns["disagree"]
-
-        if re.search(agree_pat, response_clean):
-            return "agree"
-        elif re.search(disagree_pat, response_clean):
-            return "disagree"
-        else:
-            return "disagree"

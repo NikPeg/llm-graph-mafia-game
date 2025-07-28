@@ -50,32 +50,6 @@ RÈGLES DU JEU:
 """,
 }
 
-CONFIRMATION_VOTE_EXPLANATIONS = {
-    "English": """
-ABOUT CONFIRMATION VOTES:
-- This is the final chance to reconsider the town's decision
-- If the majority agrees, {player_to_eliminate} will be eliminated
-- If the majority disagrees, no one will be eliminated this round
-""",
-    "Spanish": """
-SOBRE LOS VOTOS DE CONFIRMACIÓN:
-- Esta es la última oportunidad para reconsiderar la decisión del pueblo
-- Si la mayoría está de acuerdo, {player_to_eliminate} será eliminado
-- Si la mayoría está en desacuerdo, nadie será eliminado en esta ronda
-""",
-    "French": """
-À PROPOS DES VOTES DE CONFIRMATION:
-- C'est la dernière chance de reconsidérer la décision de la ville
-- Si la majorité est d'accord, {player_to_eliminate} sera éliminé
-- Si la majorité n'est pas d'accord, personne ne sera éliminé ce tour-ci
-""",
-    "Korean": """
-확인 투표에 대하여:
-- 이것은 마을의 결정을 재고할 수 있는 마지막 기회입니다
-- 과반수가 동의하면 {player_to_eliminate}이(가) 제거됩니다
-- 과반수가 반대하면 이번 라운드에서는 아무도 제거되지 않습니다
-""",
-}
 
 PROMPT_TEMPLATES = {
     "English": {
@@ -340,68 +314,6 @@ Votre réponse:
     },
 }
 
-CONFIRMATION_VOTE_TEMPLATES = {
-    "English": """
-You are {model_name}, playing a Mafia game. The town has voted to eliminate {player_to_eliminate}.
-Before the elimination is carried out, a confirmation vote is needed.
-
-{confirmation_explanation}
-
-Current game state: {game_state_str}
-
-{thinking_tag}
-
-Do you agree with eliminating {player_to_eliminate}? 
-Respond with either "AGREE" or "DISAGREE" and a brief explanation of your reasoning.
-
-Your response:
-""",
-    "Spanish": """
-Eres {model_name}, jugando un juego de Mafia. El pueblo ha votado para eliminar a {player_to_eliminate}.
-Antes de que se lleve a cabo la eliminación, se necesita un voto de confirmación.
-
-{confirmation_explanation}
-
-Estado actual del juego: {game_state_str}
-
-{thinking_tag}
-
-¿Estás de acuerdo con eliminar a {player_to_eliminate}?
-Responde con "ACUERDO" o "DESACUERDO" y una breve explicación de tu razonamiento.
-
-Tu respuesta:
-""",
-    "French": """
-Vous êtes {model_name}, jouant à un jeu de Mafia. La ville a voté pour éliminer {player_to_eliminate}.
-Avant que l'élimination ne soit effectuée, un vote de confirmation est nécessaire.
-
-{confirmation_explanation}
-
-État actuel du jeu: {game_state_str}
-
-{thinking_tag}
-
-Êtes-vous d'accord pour éliminer {player_to_eliminate}?
-Répondez par "D'ACCORD" ou "PAS D'ACCORD" et une brève explication de votre raisonnement.
-
-Votre réponse:
-""",
-    "Korean": """
-당신은 {model_name}으로, 마피아 게임을 하고 있습니다. 마을은 {player_to_eliminate}을(를) 제거하기로 투표했습니다.
-제거가 실행되기 전에 확인 투표가 필요합니다.
-
-{confirmation_explanation}
-
-현재 게임 상태: {game_state_str}
-
-{thinking_tag}
-
-{player_to_eliminate}을(를) 제거하는 것에 동의하십니까?
-"동의" 또는 "반대"로 응답하고 간단한 이유를 설명해 주세요.
-
-당신의 응답:
-""",
-}
 
 THINKING_TAGS = {
     "English": f"IMPORTANT: You can use <think>your private thoughts here</think> tags to reason privately. \nOther players will NOT see anything inside these tags. Use this to plan your strategy.\nYour response is limited to {config.MAX_OUTPUT_TOKENS} tokens maximum. Be concise and focused.",
@@ -436,21 +348,3 @@ VOTE_PATTERNS = {
     "Korean": r"투표:\s*([A-Za-z][A-Za-z\s'-]*?)(?:\s|$|[.,:;!?])",
 }
 
-CONFIRMATION_VOTE_PATTERNS = {
-    "English": {
-        "agree": r"\b(agree|yes|confirm|approve)\b",
-        "disagree": r"\b(disagree|no|reject|disapprove)\b",
-    },
-    "Spanish": {
-        "agree": r"\b(acuerdo|sí|confirmo|apruebo)\b",
-        "disagree": r"\b(desacuerdo|no|rechazo|desapruebo)\b",
-    },
-    "French": {
-        "agree": r"\b(d'accord|oui|confirme|approuve)\b",
-        "disagree": r"\b(pas d'accord|non|rejette|désapprouve)\b",
-    },
-    "Korean": {
-        "agree": r"\b(동의|예|확인|승인)\b",
-        "disagree": r"\b(반대|아니오|거부|불승인)\b",
-    },
-}

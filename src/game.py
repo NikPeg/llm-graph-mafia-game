@@ -529,46 +529,30 @@ class MafiaGame:
 
         eliminated_players = []
         if eliminated_player:
-            is_confirmed, confirmation_votes = self.get_confirmation_vote(
-                eliminated_player
+            # Исключаем игрока без подтверждения
+            eliminated_player.alive = False
+            eliminated_players.append(eliminated_player)
+            self.current_round_data["eliminations"].append(
+                eliminated_player.player_name
             )
 
-            self.current_round_data["confirmation_votes"] = confirmation_votes
+            self.current_round_data["eliminated_by_vote"] = [
+                eliminated_player.player_name
+            ]
 
-            if not is_confirmed:
-                confirmation_text = f"The elimination of {eliminated_player.model_name} was rejected by the town."
-                self.current_round_data["outcome"] += f" {confirmation_text}"
-                self.logger.event(confirmation_text, Color.YELLOW)
+            self.current_round_data["vote_counts"] = vote_counts
+            self.current_round_data["vote_details"] = vote_details
 
-                eliminated_player = None
-                eliminated_players = []
+            outcome_text = f"{eliminated_player.player_name} [{eliminated_player.model_name}] was eliminated by vote with {vote_counts[eliminated_player.player_name]} votes."
+            self.current_round_data["outcome"] += f" {outcome_text}"
+            self.logger.event(outcome_text, Color.YELLOW)
 
-                self.current_round_data["vote_counts"] = vote_counts
-                self.current_round_data["vote_details"] = vote_details
-            else:
-                eliminated_player.alive = False
-                eliminated_players.append(eliminated_player)
-                self.current_round_data["eliminations"].append(
-                    eliminated_player.player_name
-                )
-
-                self.current_round_data["eliminated_by_vote"] = [
-                    eliminated_player.player_name
-                ]
-
-                self.current_round_data["vote_counts"] = vote_counts
-                self.current_round_data["vote_details"] = vote_details
-
-                outcome_text = f"{eliminated_player.player_name} [{eliminated_player.model_name}] was eliminated by vote with {vote_counts[eliminated_player.player_name]} votes."
-                self.current_round_data["outcome"] += f" {outcome_text}"
-                self.logger.event(outcome_text, Color.YELLOW)
-
-                voters = vote_details.get(eliminated_player.player_name, [])
-                if voters:
-                    voter_names = [name.split("/")[-1] for name in voters]
-                    voter_text = f"Voted by: {', '.join(voter_names)}"
-                    self.current_round_data["voters"] = voters
-                    self.logger.event(voter_text, Color.YELLOW)
+            voters = vote_details.get(eliminated_player.player_name, [])
+            if voters:
+                voter_names = [name.split("/")[-1] for name in voters]
+                voter_text = f"Voted by: {', '.join(voter_names)}"
+                self.current_round_data["voters"] = voters
+                self.logger.event(voter_text, Color.YELLOW)
         else:
             outcome_text = "No one was eliminated by vote."
             self.current_round_data["outcome"] += f" {outcome_text}"
@@ -840,54 +824,6 @@ class MafiaGame:
 
         return response
 
-    def get_confirmation_vote(self, player_to_eliminate):
-        """
-        Get confirmation votes from all alive players on whether to eliminate a player.
-
-        Args:
-            player_to_eliminate: The player who is proposed for elimination
-
-        Returns:
-            tuple: (bool, dict) - Whether the elimination is confirmed and the vote details
-        """
-        alive_players = self.get_alive_players()
-
-        voting_players = [p for p in alive_players if p != player_to_eliminate]
-
-        self.logger.event(
-            f"Confirmation vote for eliminating {player_to_eliminate.player_name} [{player_to_eliminate.model_name}]",
-            Color.YELLOW,
-        )
-
-        confirmation_votes = {"agree": [], "disagree": []}
-
-        for player in voting_players:
-            game_state_str = self.get_game_state()
-
-            player_state = {
-                "game_state": game_state_str,
-                "confirmation_vote_for": player_to_eliminate.player_name,
-                "confirmation_vote_for_model": player_to_eliminate.model_name,
-            }
-
-            vote = player.get_confirmation_vote(player_state)
-
-            if vote.lower() in ["agree", "yes", "confirm", "true"]:
-                confirmation_votes["agree"].append(player.model_name)
-                self.logger.event(
-                    f"{player.player_name} [{player.model_name}] voted to CONFIRM elimination",
-                    Color.GREEN,
-                )
-            else:
-                confirmation_votes["disagree"].append(player.model_name)
-                self.logger.event(
-                    f"{player.player_name} [{player.model_name}] voted to REJECT elimination",
-                    Color.RED,
-                )
-
-        is_confirmed = len(confirmation_votes["agree"]) > len(voting_players) / 2
-
-        return is_confirmed, confirmation_votes
 
     def run_game(self, game_number=1):
         """

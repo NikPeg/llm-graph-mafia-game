@@ -210,10 +210,13 @@ class Player:
         """
 
         pattern = VOTE_PATTERNS.get(self.language, VOTE_PATTERNS["English"])
-        match = re.search(pattern, response, re.IGNORECASE)
-
-        if match:
-            target_name_raw = match.group(1).strip().rstrip(".:,;!? \t")
+        
+        # Найдем все совпадения голосов в сообщении
+        matches = re.findall(pattern, response, re.IGNORECASE)
+        
+        if matches:
+            # Берем последний голос (самый актуальный)
+            target_name_raw = matches[-1].strip().rstrip(".:,;!? \t")
 
             # Попробуем найти точное совпадение
             for p in all_players:

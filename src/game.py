@@ -490,10 +490,6 @@ class MafiaGame:
                 self.current_round_data["vote_counts"] = vote_counts
                 self.current_round_data["vote_details"] = vote_details
             else:
-                last_words = self.get_last_words(
-                    eliminated_player, vote_counts[eliminated_player.player_name]
-                )
-
                 eliminated_player.alive = False
                 eliminated_players.append(eliminated_player)
                 self.current_round_data["eliminations"].append(
@@ -510,11 +506,6 @@ class MafiaGame:
                 outcome_text = f"{eliminated_player.player_name} [{eliminated_player.model_name}] was eliminated by vote with {vote_counts[eliminated_player.player_name]} votes."
                 self.current_round_data["outcome"] += f" {outcome_text}"
                 self.logger.event(outcome_text, Color.YELLOW)
-
-                if last_words:
-                    last_words_text = f'{eliminated_player.player_name} [{eliminated_player.model_name}]\'s last words: "{last_words}"'
-                    self.current_round_data["last_words"] = last_words
-                    self.logger.event(last_words_text, Color.CYAN)
 
                 voters = vote_details.get(eliminated_player.player_name, [])
                 if voters:

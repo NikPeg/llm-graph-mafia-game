@@ -644,7 +644,7 @@ class MafiaGame:
                         
                         # Добавляем автоматический голос к контенту
                         vote_message = f"VOTE: {vote_target.player_name}"
-                        final_content = f"{sanitized}\n\n{vote_message}"
+                        final_content = f"{sanitized} {vote_message}"
                         
                         self.logger.player_action(
                             player.player_name,

@@ -710,13 +710,7 @@ class MafiaGame:
                             action_text,
                             player.player_name,
                         )
-                else:
-                    self.logger.warning(
-                        f"{player.player_name} failed to cast a valid vote during voting phase"
-                    )
-                    self.current_round_data["actions"][player.player_name] = (
-                        "Invalid vote"
-                    )
+                # Если vote_target == None, то действие уже записано выше (воздержание)
 
             # Добавляем в историю обсуждений финальный контент
             self.discussion_history += f"{player.player_name}: {final_content}\n\n"

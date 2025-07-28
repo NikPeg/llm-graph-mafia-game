@@ -843,13 +843,27 @@ class MafiaGame:
                 "role": player.role.value,
                 "model_name": player.model_name,
                 "player_name": player.player_name,
+                "survived": player.alive,
             }
+
+        # Собираем дополнительную статистику игры
+        game_stats = {
+            "total_rounds": self.round_number,
+            "survivors_count": sum(1 for p in self.players if p.alive),
+            "mafia_survivors": sum(1 for p in self.mafia_players if p.alive),
+            "villager_survivors": sum(1 for p in self.villager_players if p.alive),
+            "doctor_survived": self.doctor_player.alive if self.doctor_player else False,
+            "total_eliminations": len(self.players) - sum(1 for p in self.players if p.alive),
+            "mafia_eliminations": sum(1 for p in self.mafia_players if not p.alive),
+            "villager_eliminations": sum(1 for p in self.villager_players if not p.alive),
+            "doctor_eliminated": not self.doctor_player.alive if self.doctor_player else False,
+        }
 
         critic_review = self.generate_critic_review(winner)
 
         self.logger.game_end(game_number, winner, self.round_number)
 
-        return winner, self.rounds_data, participants, self.language, critic_review
+        return winner, self.rounds_data, participants, self.language, critic_review, game_stats
 
     def generate_critic_review(self, winner):
         """

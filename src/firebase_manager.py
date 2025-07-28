@@ -38,6 +38,7 @@ class FirebaseManager:
         participants,
         game_type=config.GAME_TYPE,
         language=config.LANGUAGE,
+        game_stats=None,
     ):
         """
         Store the result of a game in Firebase.
@@ -48,6 +49,7 @@ class FirebaseManager:
             participants (dict): Dictionary mapping model names to role and player_name.
             game_type (str, optional): Type of Mafia game played.
             language (str, optional): Language used for the game.
+            game_stats (dict, optional): Additional game statistics.
 
         Returns:
             bool: True if successful, False otherwise.
@@ -66,6 +68,10 @@ class FirebaseManager:
                 "winner": winner,
                 "participants": participants,
             }
+            
+            # Добавляем дополнительную статистику если она есть
+            if game_stats:
+                game_data.update(game_stats)
 
             self.db.collection("mafia_games").document(game_id).set(game_data)
             return True
@@ -81,6 +87,7 @@ class FirebaseManager:
         game_type=config.GAME_TYPE,
         language=config.LANGUAGE,
         critic_review=None,
+        game_stats=None,
     ):
         """
         Store the log of a game in Firebase.
@@ -92,6 +99,7 @@ class FirebaseManager:
             game_type (str, optional): Type of Mafia game played.
             language (str, optional): Language used for the game.
             critic_review (dict, optional): Game critic review with title and content.
+            game_stats (dict, optional): Additional game statistics.
 
         Returns:
             bool: True if successful, False otherwise.
@@ -112,6 +120,9 @@ class FirebaseManager:
 
             if critic_review:
                 log_data["critic_review"] = critic_review
+                
+            if game_stats:
+                log_data["game_stats"] = game_stats
 
             self.db.collection("game_logs").document(game_id).set(log_data)
             return True
@@ -165,14 +176,18 @@ class FirebaseManager:
             for game in results:
                 winner = game.get("winner")
                 participants = game.get("participants", {})
+                total_rounds = game.get("total_rounds", 0)
+                survivors_count = game.get("survivors_count", 0)
 
                 for player_name, data in participants.items():
                     if isinstance(data, dict):
                         role = data.get("role")
                         model = data.get("model_name", player_name)
+                        survived = data.get("survived", False)
                     else:
                         role = data
                         model = player_name
+                        survived = False
 
                     if model not in stats:
                         stats[model] = {
@@ -184,9 +199,18 @@ class FirebaseManager:
                             "villager_wins": 0,
                             "doctor_games": 0,
                             "doctor_wins": 0,
+                            "total_rounds": 0,
+                            "survival_count": 0,
+                            "elimination_count": 0,
                         }
 
                     stats[model]["games_played"] += 1
+                    stats[model]["total_rounds"] += total_rounds
+                    
+                    if survived:
+                        stats[model]["survival_count"] += 1
+                    else:
+                        stats[model]["elimination_count"] += 1
 
                     if role == "Mafia":
                         stats[model]["mafia_games"] += 1
@@ -204,12 +228,20 @@ class FirebaseManager:
                             stats[model]["villager_wins"] += 1
                             stats[model]["games_won"] += 1
 
+            # Вычисляем дополнительные метрики
             for model in stats:
-                stats[model]["win_rate"] = (
-                    stats[model]["games_won"] / stats[model]["games_played"]
-                    if stats[model]["games_played"] > 0
-                    else 0
-                )
+                games_played = stats[model]["games_played"]
+                if games_played > 0:
+                    stats[model]["win_rate"] = stats[model]["games_won"] / games_played
+                    stats[model]["avg_rounds_per_game"] = stats[model]["total_rounds"] / games_played
+                    stats[model]["survival_rate"] = stats[model]["survival_count"] / games_played
+                    stats[model]["elimination_rate"] = stats[model]["elimination_count"] / games_played
+                else:
+                    stats[model]["win_rate"] = 0
+                    stats[model]["avg_rounds_per_game"] = 0
+                    stats[model]["survival_rate"] = 0
+                    stats[model]["elimination_rate"] = 0
+                
                 stats[model]["mafia_win_rate"] = (
                     stats[model]["mafia_wins"] / stats[model]["mafia_games"]
                     if stats[model]["mafia_games"] > 0

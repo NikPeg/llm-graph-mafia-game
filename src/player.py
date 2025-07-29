@@ -143,7 +143,10 @@ class Player:
         Returns:
             str: The response from the model with private thoughts removed.
         """
-        response = get_llm_response(self.model_name, prompt)
+        # Get the appropriate API URL for this player's role
+        _, api_url = config.get_model_for_role(self.role.value)
+        
+        response = get_llm_response(self.model_name, prompt, api_url)
 
         cleaned_response = re.sub(r"<think>.*?</think>", "", response, flags=re.DOTALL)
 

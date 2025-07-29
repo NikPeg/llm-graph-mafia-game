@@ -97,7 +97,7 @@ class MafiaGame:
 
             # Get the appropriate model for this role
             role_name = roles[i].value
-            model_name = config.get_model_for_role(role_name)
+            model_name = config.get_model_name_for_role(role_name)
 
             player = Player(model_name, player_name, roles[i], language=self.language)
             self.players.append(player)

@@ -13,13 +13,14 @@ from logger import GameLogger
 model_logger = GameLogger(log_to_file=True)
 
 
-def get_llm_response(model_name, prompt):
+def get_llm_response(model_name, prompt, api_url=None):
     """
     Get a response from an LLM model using OpenRouter API.
 
     Args:
         model_name (str): The name of the LLM model to use.
         prompt (str): The prompt to send to the model.
+        api_url (str, optional): The API URL to use. If not provided, uses default.
 
     Returns:
         str: The response from the model.
@@ -40,9 +41,12 @@ def get_llm_response(model_name, prompt):
         "max_tokens": config.MAX_OUTPUT_TOKENS,
     }
 
+    # Use provided API URL or fall back to default
+    url = api_url if api_url else config.OPENROUTER_API_URL
+
     try:
         response = requests.post(
-            config.OPENROUTER_API_URL,
+            url,
             headers=headers,
             data=json.dumps(data),
             timeout=timeout,
@@ -62,6 +66,6 @@ def get_llm_response(model_name, prompt):
             pass
 
         print(
-            f"Error getting response from {model_name}: error: {e}, response: {response_text}"
+            f"Error getting response from {model_name} at {url}: error: {e}, response: {response_text}"
         )
         return "ERROR: Could not get response"

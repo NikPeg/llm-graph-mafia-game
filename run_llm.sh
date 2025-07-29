@@ -1,26 +1,79 @@
 #!/bin/bash
+# Директива для более безопасного выполнения скрипта
+set -e
 
-# Модель по умолчанию
-DEFAULT_MODEL="gryphe/mythomax-l2-13b"
+# --- КОНФИГУРАЦИЯ ---
+# Начальный порт, с которого будут запускаться серверы
+START_PORT=8000
 # Максимальная длина контекста, которую мы реально будем использовать
-# Установите значение, подходящее для вашей видеокарты и задач (например, 4096, 8192, 16384)
 MAX_LEN=8192
+# Путь к шаблону чата (предполагаем, что он лежит рядом со скриптом)
+CHAT_TEMPLATE="./alpaca_chat_template.jinja"
+# --------------------
 
-# Если передан аргумент, берем его, иначе дефолт
-MODEL=${1:-$DEFAULT_MODEL}
-
-# Проверяем, является ли модель AWQ-квантованной
-if [[ "$MODEL" == *"AWQ"* ]] || [[ "$MODEL" == *"awq"* ]]; then
-    echo "Запускаю квантованную модель: $MODEL с AWQ и max_len=$MAX_LEN"
-    nohup vllm serve "$MODEL" \
-        --quantization awq \
-        --max-model-len $MAX_LEN \
-        --chat-template ./alpaca_chat_template.jinja > vllm.log 2>&1 &
-else
-    echo "Запускаю модель: $MODEL с max_len=$MAX_LEN"
-    nohup vllm serve "$MODEL" \
-        --max-model-len $MAX_LEN \
-        --chat-template ./alpaca_chat_template.jinja > vllm.log 2>&1 &
+# Проверяем, переданы ли модели в качестве аргументов
+if [ $# -eq 0 ]; then
+    echo "Ошибка: Не указаны модели для запуска."
+    echo "Пример использования: $0 Qwen/Qwen3-32B-AWQ TheBloke/Mistral-7B-Instruct-v0.2-AWQ"
+    exit 1
 fi
 
-echo "Модель $MODEL запущена в фоне. Логи: vllm.log. ID процесса: $!"
+# Проверяем наличие файла шаблона
+if [ ! -f "$CHAT_TEMPLATE" ]; then
+    echo "Предупреждение: Файл шаблона '$CHAT_TEMPLATE' не найден. Модели будут запущены без него."
+fi
+
+CURRENT_PORT=$START_PORT
+PIDS=() # Массив для хранения PID запущенных процессов
+
+# Перебираем все переданные в скрипт аргументы (модели)
+for MODEL in "$@"; do
+    # Создаем безопасное для имени файла имя модели (заменяем '/' на '_')
+    SANITIZED_MODEL_NAME=$(echo "$MODEL" | tr '/' '_')
+    LOG_FILE="vllm_${SANITIZED_MODEL_NAME}_${CURRENT_PORT}.log"
+
+    echo "---"
+    echo "Подготовка к запуску модели: $MODEL"
+
+    # Собираем команду для запуска в виде массива для надежности
+    COMMAND=(
+        "vllm" "serve" "$MODEL"
+        "--port" "$CURRENT_PORT"
+        "--max-model-len" "$MAX_LEN"
+    )
+
+    # Определяем, нужно ли добавлять флаг квантизации
+    if [[ "$MODEL" == *"-AWQ"* ]] || [[ "$MODEL" == *"-awq"* ]]; then
+        echo "  Тип: AWQ-квантованная"
+        COMMAND+=("--quantization" "awq")
+    else
+        echo "  Тип: Полная версия (FP16/BF16)"
+    fi
+
+    # Добавляем шаблон чата, если файл существует
+    if [ -f "$CHAT_TEMPLATE" ]; then
+        COMMAND+=("--chat-template" "$CHAT_TEMPLATE")
+    fi
+
+    echo "  Порт: $CURRENT_PORT"
+    echo "  Лог-файл: $LOG_FILE"
+    
+    # Запускаем команду в фоновом режиме
+    # Конструкция "${COMMAND[@]}" корректно обрабатывает аргументы с пробелами
+    nohup "${COMMAND[@]}" > "$LOG_FILE" 2>&1 &
+    
+    # Сохраняем PID последнего запущенного фонового процесса
+    PID=$!
+    PIDS+=($PID)
+    
+    echo "Модель $MODEL запущена. PID: $PID"
+
+    # Увеличиваем номер порта для следующей модели
+    CURRENT_PORT=$((CURRENT_PORT + 1))
+done
+
+echo "---"
+echo "Все модели отправлены на запуск."
+echo "Запущенные процессы (PIDs): ${PIDS[*]}"
+echo "Используйте 'tail -f <имя_файла.log>' для просмотра логов."
+echo "Используйте 'kill <PID>' для остановки конкретной модели."
